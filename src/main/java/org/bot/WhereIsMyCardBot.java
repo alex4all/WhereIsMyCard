@@ -34,7 +34,7 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
     private String readHelpMessage() {
         try {
             StringBuilder helpBuilder = new StringBuilder();
-            BufferedReader reader = new BufferedReader(new FileReader("resources/help.txt"));
+            BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/help.txt"));
             String line = reader.readLine();
             while (line != null) {
                 helpBuilder.append(line).append(System.lineSeparator());
