@@ -7,12 +7,11 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 public class BotStarter {
 
     public static void main(String[] args) {
-        String token = args[0];
         ApiContextInitializer.init();
         TelegramBotsApi botsApi = new TelegramBotsApi();
 
         try {
-            botsApi.registerBot(new WhereIsMyCardBot(token));
+            botsApi.registerBot(new WhereIsMyCardBot());
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
