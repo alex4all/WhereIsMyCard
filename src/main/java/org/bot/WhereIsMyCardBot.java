@@ -5,8 +5,6 @@ import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.util.List;
 
 public class WhereIsMyCardBot extends TelegramLongPollingBot {
@@ -30,23 +28,34 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
         if (token == null)
             throw new RuntimeException("Token can't be null");
         datesManager = new AppointmentDatesManager(DAYS_TO_SCAN, UPDATE_PERIOD);
-        helpMessage = readHelpMessage();
+        helpMessage = generateHelpMessage();
     }
 
-    private String readHelpMessage() {
-        try {
-            StringBuilder helpBuilder = new StringBuilder();
-            BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/help.txt"));
-            String line = reader.readLine();
-            while (line != null) {
-                helpBuilder.append(line).append(System.lineSeparator());
-                line = reader.readLine();
-            }
-            return helpBuilder.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Can't read help file";
-        }
+//    private String readHelpMessage() {
+//        try {
+//            StringBuilder helpBuilder = new StringBuilder();
+//            BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/help.txt"));
+//            String line = reader.readLine();
+//            while (line != null) {
+//                helpBuilder.append(line).append(System.lineSeparator());
+//                line = reader.readLine();
+//            }
+//            return helpBuilder.toString();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return "Can't read help file";
+//        }
+//    }
+
+    private String generateHelpMessage() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("/firstavailabledate - get first available date").append(System.lineSeparator());
+        builder.append("/firstavailabledates [1,10] - get list of first available dates. You have to provide number " +
+                "argument - how many days you want to print").append(System.lineSeparator());
+        builder.append("/dateinfo yyyy-MM-dd - get information about provided date. You have to provide date argument")
+                .append(System.lineSeparator());
+        builder.append("/link - get Urzad URL");
+        return builder.toString();
     }
 
     @Override
