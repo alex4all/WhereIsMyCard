@@ -26,7 +26,7 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
     private final String token;
 
     public WhereIsMyCardBot() {
-        token = System.getProperty("telegram_bot_token");
+        token = System.getenv("telegram_bot_token");
         if (token == null)
             throw new RuntimeException("Token can't be null");
         datesManager = new AppointmentDatesManager(DAYS_TO_SCAN, UPDATE_PERIOD);
