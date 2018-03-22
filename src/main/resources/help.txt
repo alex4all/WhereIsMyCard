@@ -2,4 +2,3 @@
 /firstavailabledates [1,10] - get list of first available dates. You have to provide number argument - how many days you want to print
 /dateinfo yyyy-MM-dd - get information about provided date. You have to provide date argument
 /link - get Urzand URL
-/test
