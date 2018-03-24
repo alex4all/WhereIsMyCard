@@ -5,11 +5,12 @@ import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
+import java.text.ParseException;
 import java.util.List;
 
 public class WhereIsMyCardBot extends TelegramLongPollingBot {
-    private static final String COMMAND_FIRST_AVAILABLE_DATES = "/firstavailabledates";
-    private static final String COMMAND_FIRST_AVAILABLE_DATE = "/firstavailabledate";
+    private static final String COMMAND_FIRST_ODBIOR = "/first_odbior";
+    private static final String COMMAND_FIRST_ZLOZENIE = "/first_zlozenie";
     private static final String COMMAND_FIRST_DATE_INFO = "/dateinfo";
     private static final String COMMAND_HELP = "/help";
     private static final String COMMAND_LINK = "/link";
@@ -21,46 +22,20 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
 
     private final AppointmentDatesManager datesManager;
     private final String helpMessage;
+
+    private final String botName;
     private final String token;
 
-    public WhereIsMyCardBot() {
-        token = System.getenv("telegram_bot_token");
-        if (token == null)
-            throw new RuntimeException("Token can't be null");
+    public WhereIsMyCardBot(String botName, String token) {
+        this.botName = botName;
+        this.token = token;
         datesManager = new AppointmentDatesManager(DAYS_TO_SCAN, UPDATE_PERIOD);
         helpMessage = generateHelpMessage();
     }
 
-//    private String readHelpMessage() {
-//        try {
-//            StringBuilder helpBuilder = new StringBuilder();
-//            BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/help.txt"));
-//            String line = reader.readLine();
-//            while (line != null) {
-//                helpBuilder.append(line).append(System.lineSeparator());
-//                line = reader.readLine();
-//            }
-//            return helpBuilder.toString();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return "Can't read help file";
-//        }
-//    }
-
-    private String generateHelpMessage() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("/firstavailabledate - get first available date").append(System.lineSeparator());
-        builder.append("/firstavailabledates [1,10] - get list of first available dates. You have to provide number " +
-                "argument - how many days you want to print").append(System.lineSeparator());
-        builder.append("/dateinfo yyyy-MM-dd - get information about provided date. You have to provide date argument")
-                .append(System.lineSeparator());
-        builder.append("/link - get Urzad URL");
-        return builder.toString();
-    }
-
     @Override
     public String getBotUsername() {
-        return "WhereIsMyCardBot";
+        return botName;
     }
 
     @Override
@@ -69,21 +44,24 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
             String chatText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
 
-            if (chatText.startsWith(COMMAND_FIRST_AVAILABLE_DATES)) {
-                String daysStr = chatText.substring(COMMAND_FIRST_AVAILABLE_DATES.length()).trim();
+            boolean firstObdior = chatText.startsWith(COMMAND_FIRST_ODBIOR);
+            boolean firstZlozenie = chatText.startsWith(COMMAND_FIRST_ZLOZENIE);
+            if (firstObdior || firstZlozenie) {
+                String command = firstObdior ? COMMAND_FIRST_ODBIOR : COMMAND_FIRST_ZLOZENIE;
+                AppointmentDate.Type type = firstObdior ? AppointmentDate.Type.ODBIOR : AppointmentDate.Type.ZLOZENIE;
+                String daysStr = chatText.substring(command.length()).trim();
+                if (daysStr.isEmpty()) {
+                    sendFirstAvailableDates(type, 1, chatId);
+                    return;
+                }
                 try {
                     int days = Integer.parseInt(daysStr);
-                    sendFirstAvailableDates(days, chatId);
+                    sendFirstAvailableDates(type, days, chatId);
                 } catch (NumberFormatException e) {
-                    sendMessage("Can't get count of days from your request. Use 5 by default", chatId);
-                    sendFirstAvailableDates(5, chatId);
                     e.printStackTrace();
+                    sendMessage("Can't parse count of days from your request. Use 1 by default", chatId, false);
+                    sendFirstAvailableDates(type, 1, chatId);
                 }
-                return;
-            }
-
-            if (chatText.startsWith(COMMAND_FIRST_AVAILABLE_DATE)) {
-                sendFirstAvailableDates(1, chatId);
                 return;
             }
 
@@ -94,12 +72,12 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
             }
 
             if (chatText.startsWith(COMMAND_HELP)) {
-                sendMessage(helpMessage, chatId);
+                sendMessage(helpMessage, chatId, true);
             }
 
             if (chatText.startsWith(COMMAND_LINK)) {
                 System.out.println("Send link");
-                sendMessage(URL, chatId);
+                sendMessage(URL, chatId, false);
             }
         }
     }
@@ -111,29 +89,36 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
 
     private void sendDateInfo(String date, long chatId) {
         System.out.println("sendDateInfo " + date);
-        AppointmentDate dateInfo = datesManager.getDateInfo(date);
+        List<AppointmentDate> dateInfo = null;
+        try {
+            dateInfo = datesManager.getDateInfo(date);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            sendMessage("Can't parse provided date: " + date, chatId, false);
+        }
         String info;
         if (dateInfo != null)
             info = dateInfo.toString();
         else
             info = "No data found for provided date: " + date;
-        sendMessage(info, chatId);
+        sendMessage(info, chatId, false);
     }
 
-    private void sendFirstAvailableDates(int count, long chatId) {
+    private void sendFirstAvailableDates(AppointmentDate.Type type, int count, long chatId) {
         System.out.println("sendFirstAvailableDates " + count);
-        List<AppointmentDate> datesInfo = datesManager.getFirstAvailableDates(count);
+        List<AppointmentDate> datesInfo = datesManager.getFirstAvailableDates(type, count);
         if (datesInfo.size() == 0)
-            sendMessage("No data found for", chatId);
+            sendMessage("No data found for", chatId, false);
         StringBuilder result = new StringBuilder();
         for (AppointmentDate dayInfo : datesInfo)
-            result.append(dayInfo.toString()).append(System.lineSeparator());
+            result.append(dayInfo.toMessage()).append(System.lineSeparator());
 
-        sendMessage(result.toString(), chatId);
+        sendMessage(result.toString(), chatId, true);
     }
 
-    private void sendMessage(String text, long chatId) {
+    private void sendMessage(String text, long chatId, boolean htmlEnable) {
         SendMessage message = new SendMessage();
+        message.enableHtml(htmlEnable);
         message.setChatId(chatId);
         message.setText(text);
         try {
@@ -141,5 +126,16 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+    }
+
+
+    private String generateHelpMessage() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("<b>/first_odbior [1,10]</b> - get list of first available dates. You can provide count argument").append(System.lineSeparator());
+        builder.append("<b>/first_zlozenie [1,10]</b> - get list of first available dates. You can provide count argument").append(System.lineSeparator());
+        builder.append("<b>/dateinfo yyyy-MM-dd</b> - get information about provided date. You have to provide date argument").append(System.lineSeparator());
+        builder.append("<b>/link</b> - get Urzad URL").append(System.lineSeparator());
+        builder.append("<b>/help</b> - list of available commands");
+        return builder.toString();
     }
 }

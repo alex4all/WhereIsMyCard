@@ -1,60 +1,96 @@
 package org.bot;
 
 public class AppointmentDate {
-	private long updatedAt;
-	private String date;
-	private String availableTime;
-	boolean available = true;
+    public enum Type {ODBIOR, ZLOZENIE}
 
-	public AppointmentDate(long updatedAt, String date, String availableTime) {
-		this.updatedAt = updatedAt;
-		this.date = date;
-		this.availableTime = availableTime;
-		if (availableTime.startsWith("brak"))
-			available = false;
-	}
+    private Type type;
+    private String date;
+    private String availableTime;
+    private long updatedAt;
+    boolean available = true;
 
-	public boolean isAvailable() {
-		return available;
-	}
+    public AppointmentDate(Type type, String date, String availableTime) {
+        this.type = type;
+        this.date = date;
+        if (availableTime.startsWith("brak")) {
+            this.availableTime = "No available time";
+            available = false;
+        } else
+            this.availableTime = availableTime;
+    }
 
-	public void setAvailable(boolean available) {
-		this.available = available;
-	}
+    public void update(AppointmentDate newDate) {
+        this.availableTime = newDate.availableTime;
+        this.updatedAt = newDate.updatedAt;
+    }
 
-	public String getDate() {
-		return date;
-	}
+    public boolean isAvailable() {
+        return available;
+    }
 
-	public void setDate(String date) {
-		this.date = date;
-	}
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
 
-	public String getTime() {
-		return availableTime;
-	}
+    public String getDate() {
+        return date;
+    }
 
-	public void setTime(String availableTime) {
-		this.availableTime = availableTime;
-	}
+    public void setDate(String date) {
+        this.date = date;
+    }
 
-	public long getUpdatedAt() {
-		return updatedAt;
-	}
+    public String getTime() {
+        return availableTime;
+    }
 
-	public void setUpdatedAt(long updatedAt) {
-		this.updatedAt = updatedAt;
-	}
+    public void setTime(String availableTime) {
+        this.availableTime = availableTime;
+    }
 
-	public String getTimeAfterUpdate() {
-		long timeAfterUpdate = System.currentTimeMillis() - updatedAt;
-		long minutesAgo = timeAfterUpdate / (1000 * 60);
-		if (minutesAgo < 1)
-			return "less than 1 min ago";
-		return minutesAgo + "min ago";
-	}
+    public long getUpdatedAt() {
+        return updatedAt;
+    }
 
-	public String toString() {
-		return date + ": " + availableTime + "; Updated " + getTimeAfterUpdate();
-	}
+    public void setUpdatedAt(long updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public String getTimeAfterUpdate() {
+        long timeAfterUpdate = System.currentTimeMillis() - updatedAt;
+        long minutesAgo = timeAfterUpdate / (1000 * 60);
+        if (minutesAgo < 1)
+            return "Updated < 1 min ago";
+        return "Updated " + minutesAgo + " min ago";
+    }
+
+
+    public String getAvailableTime() {
+        return availableTime;
+    }
+
+    public void setAvailableTime(String availableTime) {
+        this.availableTime = availableTime;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
+    }
+
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append(date);
+        return "Type: " + type + "; Date: " + date + ": " + availableTime + "; " + getTimeAfterUpdate();
+    }
+
+    public String toMessage() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("<b>").append(date).append("</b>").append(":");
+        builder.append(availableTime).append(" <i>").append(getTimeAfterUpdate()).append("</i>");
+        return builder.toString();
+    }
 }
