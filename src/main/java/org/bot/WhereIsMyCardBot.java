@@ -74,11 +74,13 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
 
             if (chatText.startsWith(COMMAND_HELP)) {
                 sendMessage(helpMessage, chatId, true);
+                return;
             }
 
             if (chatText.startsWith(COMMAND_LINK)) {
                 System.out.println("Send link");
                 sendMessage(URL, chatId, false);
+                return;
             }
         }
     }
@@ -96,6 +98,7 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
         } catch (ParseException e) {
             e.printStackTrace();
             sendMessage("Can't parse provided date: " + date, chatId, false);
+            return;
         }
 
         // verify thar result is valid. no null elements
@@ -105,8 +108,10 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
                 verifiedDates.add(appDate);
         }
 
-        if (verifiedDates.size() == 0)
+        if (verifiedDates.size() == 0) {
             sendMessage("No data found for provided date: " + date, chatId, false);
+            return;
+        }
 
         StringBuilder result = new StringBuilder();
         result.append("<b>").append(verifiedDates.get(0).getDate()).append(":</b>").append(System.lineSeparator());

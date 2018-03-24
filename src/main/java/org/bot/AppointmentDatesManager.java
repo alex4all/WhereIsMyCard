@@ -19,13 +19,11 @@ public class AppointmentDatesManager {
     private final Lock readLock;
     private final Lock writeLock;
 
-
     public AppointmentDatesManager(int daysToScan, long updatePeriod) {
         appointmentCache = new HashMap<>();
         for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
             appointmentCache.put(type, new TreeMap<>());
         }
-
 
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         readLock = lock.readLock();
