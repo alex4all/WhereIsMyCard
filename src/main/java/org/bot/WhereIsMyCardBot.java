@@ -145,7 +145,7 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
         StringBuilder builder = new StringBuilder();
         builder.append("<b>/first_odbior [1,10]</b> - get list of first available dates. You can provide count argument").append(System.lineSeparator());
         builder.append("<b>/first_zlozenie [1,10]</b> - get list of first available dates. You can provide count argument").append(System.lineSeparator());
-        builder.append("<b>/dateinfo yyyy-MM-dd</b> - get information about provided date. You have to provide date argument").append(System.lineSeparator());
+        builder.append("<b>/date_info yyyy-MM-dd</b> - get information about provided date. You have to provide date argument").append(System.lineSeparator());
         builder.append("<b>/link</b> - get Urzad URL").append(System.lineSeparator());
         builder.append("<b>/help</b> - list of available commands");
         return builder.toString();
