@@ -40,14 +40,6 @@ public class AppointmentDate {
         this.date = date;
     }
 
-    public String getTime() {
-        return availableTime;
-    }
-
-    public void setTime(String availableTime) {
-        this.availableTime = availableTime;
-    }
-
     public long getUpdatedAt() {
         return updatedAt;
     }
@@ -87,9 +79,16 @@ public class AppointmentDate {
         return "Type: " + type + "; Date: " + date + ": " + availableTime + "; " + getTimeAfterUpdate();
     }
 
-    public String toMessage() {
+    public String toMessageWithDate() {
         StringBuilder builder = new StringBuilder();
-        builder.append("<b>").append(date).append("</b>").append(":");
+        builder.append("<b>").append(date).append("</b>").append(": ");
+        builder.append(availableTime).append(" <i>").append(getTimeAfterUpdate()).append("</i>");
+        return builder.toString();
+    }
+
+    public String toMessageWithType() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("<b>").append(type).append("</b>").append(": ");
         builder.append(availableTime).append(" <i>").append(getTimeAfterUpdate()).append("</i>");
         return builder.toString();
     }

@@ -6,12 +6,13 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class WhereIsMyCardBot extends TelegramLongPollingBot {
     private static final String COMMAND_FIRST_ODBIOR = "/first_odbior";
     private static final String COMMAND_FIRST_ZLOZENIE = "/first_zlozenie";
-    private static final String COMMAND_FIRST_DATE_INFO = "/dateinfo";
+    private static final String COMMAND_FIRST_DATE_INFO = "/date_info";
     private static final String COMMAND_HELP = "/help";
     private static final String COMMAND_LINK = "/link";
 
@@ -96,12 +97,23 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
             e.printStackTrace();
             sendMessage("Can't parse provided date: " + date, chatId, false);
         }
-        String info;
-        if (dateInfo != null)
-            info = dateInfo.toString();
-        else
-            info = "No data found for provided date: " + date;
-        sendMessage(info, chatId, false);
+
+        // verify thar result is valid. no null elements
+        List<AppointmentDate> verifiedDates = new ArrayList<>();
+        for (AppointmentDate appDate : dateInfo) {
+            if (appDate != null)
+                verifiedDates.add(appDate);
+        }
+
+        if (verifiedDates.size() == 0)
+            sendMessage("No data found for provided date: " + date, chatId, false);
+
+        StringBuilder result = new StringBuilder();
+        result.append("<b>").append(verifiedDates.get(0).getDate()).append(":</b>").append(System.lineSeparator());
+
+        for (AppointmentDate appDate : dateInfo)
+            result.append(appDate.toMessageWithType()).append(System.lineSeparator());
+        sendMessage(result.toString(), chatId, true);
     }
 
     private void sendFirstAvailableDates(AppointmentDate.Type type, int count, long chatId) {
@@ -111,7 +123,7 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
             sendMessage("No data found for", chatId, false);
         StringBuilder result = new StringBuilder();
         for (AppointmentDate dayInfo : datesInfo)
-            result.append(dayInfo.toMessage()).append(System.lineSeparator());
+            result.append(dayInfo.toMessageWithDate()).append(System.lineSeparator());
 
         sendMessage(result.toString(), chatId, true);
     }

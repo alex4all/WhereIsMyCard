@@ -20,7 +20,7 @@ public class BotStarter {
         if(botName == null || token == null){
             botName = System.getenv("telegram_bot_name");
             token = System.getenv("telegram_bot_token");
-            System.out.println("Take name and token from args");
+            System.out.println("Take name and token env vars");
             System.out.println("name: " + botName + "; token: " + token);
         }
 
