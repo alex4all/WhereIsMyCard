@@ -7,15 +7,21 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 public class BotStarter {
 
     public static void main(String[] args) {
-        String botName;
-        String token;
+        String botName = null;
+        String token = null;
 
         if (args != null && args.length > 1) {
             botName = args[0];
             token = args[1];
-        } else {
+            System.out.println("Take name and token from args");
+            System.out.println("name: " + botName + "; token: " + token);
+        }
+
+        if(botName == null || token == null){
             botName = System.getenv("telegram_bot_name");
             token = System.getenv("telegram_bot_token");
+            System.out.println("Take name and token from args");
+            System.out.println("name: " + botName + "; token: " + token);
         }
 
         if (botName == null || token == null)
