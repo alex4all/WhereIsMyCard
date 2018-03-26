@@ -22,6 +22,7 @@ public class AppointmentDate {
     public void update(AppointmentDate newDate) {
         this.availableTime = newDate.availableTime;
         this.updatedAt = newDate.updatedAt;
+        this.available = available;
     }
 
     public boolean isAvailable() {
