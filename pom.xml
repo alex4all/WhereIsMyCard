@@ -14,6 +14,11 @@
             <artifactId>telegrambots</artifactId>
             <version>3.6</version>
         </dependency>
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>0.9.11</version>
+        </dependency>
     </dependencies>
 
     <properties>
