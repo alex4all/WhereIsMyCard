@@ -1,16 +1,14 @@
 package org.bot;
 
 import org.bot.commands.Command;
+import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 public class WhereIsMyCardBot extends TelegramLongPollingBot {
 
-    public static final String BOT_NAME = "@WhereIsMyCardBot";
-
-
     private final AppointmentDatesManager datesManager;
-
     private final String botName;
     private final String token;
     private final CommandsManager commandsManager;
@@ -20,6 +18,7 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
         this.token = token;
         datesManager = AppointmentDatesManager.getInstance();
         commandsManager = new CommandsManager();
+        System.out.println("Bot started");
     }
 
     @Override
@@ -31,11 +30,30 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String message = update.getMessage().getText();
+            System.out.println("Update received: " + message);
             if (isCommand(message)) {
-                Command command = commandsManager.createCommand(update);
-                command.process(new CommandResultHandler(this));
-                return;
+                try {
+                    Command command = commandsManager.createCommand(update);
+                    command.process(new CommandResultHandler(this));
+                    return;
+                } catch (CommandParseException e)
+                {
+                    e.printStackTrace();
+                    sendError(e.getMessage(), update.getMessage().getChatId());
+                }
             }
+        }
+    }
+
+    public void sendError(String error, long chatId) {
+        SendMessage message = new SendMessage();
+        message.enableHtml(true);
+        message.setChatId(chatId);
+        message.setText(error);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
         }
     }
 

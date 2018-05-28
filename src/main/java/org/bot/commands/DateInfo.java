@@ -14,15 +14,15 @@ import static org.bot.AppointmentDatesManager.DATE_PATTERN;
 
 @BotCommand(name = "date_info")
 public class DateInfo extends Command {
-
-    private Date date;
+    private static final AppointmentDatesManager DATES_MANAGER = AppointmentDatesManager.getInstance();
     private SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_PATTERN);
+    private Date date;
 
     @Override
     protected void processInternal(CommandResultHandler handler) {
         List<AppointmentDate> dateInfo;
         try {
-            dateInfo = AppointmentDatesManager.getInstance().getDateInfo(date);
+            dateInfo = DATES_MANAGER.getDateInfo(date);
         } catch (ParseException e) {
             throw new CommandParseException(e.getMessage());
         }
@@ -35,10 +35,10 @@ public class DateInfo extends Command {
 
     @Override
     protected void initializeInternal(Update update) {
-        List<String> args = CommandsManager.getCommandArgs(commandBody);
-        if (args.size() != 1)
+
+        if (commandArgs.length != 1)
             throw new CommandParseException("Incorrect count of args. You have to provide date using following pattern: " + DATE_PATTERN);
-        String dateToCheck = args.get(0);
+        String dateToCheck = commandArgs[0];
         try {
             date = dateFormat.parse(dateToCheck);
         } catch (ParseException e) {
@@ -47,7 +47,6 @@ public class DateInfo extends Command {
     }
 
     private String dateInfoToString(List<AppointmentDate> dateInfo) {
-
         // verify thar result is valid. no null elements
         List<AppointmentDate> verifiedDates = new ArrayList<>();
         for (AppointmentDate appDate : dateInfo) {

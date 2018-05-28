@@ -8,11 +8,11 @@ public abstract class Command {
 
     private boolean initialized = false;
     protected long chatId;
-    protected String commandBody;
+    protected String[] commandArgs;
 
-    public void initialize(Update update, String commandBody) {
+    public void initialize(Update update, String [] commandArgs) {
         chatId = update.getMessage().getChatId();
-        this.commandBody = commandBody;
+        this.commandArgs = commandArgs;
         initializeInternal(update);
         initialized = true;
     }
@@ -27,8 +27,8 @@ public abstract class Command {
         return chatId;
     }
 
-    public String getCommandBody() {
-        return commandBody;
+    public String[] getCommandArgs() {
+        return commandArgs;
     }
 
     protected abstract void processInternal(CommandResultHandler handler);

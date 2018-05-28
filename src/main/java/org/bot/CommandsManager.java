@@ -5,7 +5,9 @@ import org.bot.commands.Command;
 import org.reflections.Reflections;
 import org.telegram.telegrambots.api.objects.Update;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class CommandsManager {
 
@@ -18,39 +20,44 @@ public class CommandsManager {
             String commandName = command.getDeclaredAnnotation(BotCommand.class).name();
             commandsByName.put(commandName, (Class<Command>) command);
         }
+        System.out.println("List of available commands: " + commandsByName.keySet());
     }
 
     public Command createCommand(Update update) {
         String message = update.getMessage().getText();
-        String commandBody = getCommandBody(message);
-        String commandName = getCommandName(commandBody);
+        String commandName = getCommandName(message);
         if (!commandsByName.containsKey(commandName))
             throw new CommandParseException("Command doesn't exists: " + commandName);
         try {
             Command command = commandsByName.get(commandName).newInstance();
-            command.initialize(update, commandBody);
+            command.initialize(update, getCommandArgs(message, commandName));
             return command;
         } catch (InstantiationException | IllegalAccessException e) {
             throw new CommandParseException("Can't process command: " + commandName);
         }
     }
 
-    public static String getCommandBody(String command) {
-        if (command.endsWith(WhereIsMyCardBot.BOT_NAME)) {
-            return command.substring(1, command.length() - WhereIsMyCardBot.BOT_NAME.length());
+    public static String getCommandName(String message) {
+        // /command
+        if (message.indexOf(' ') == -1 && message.indexOf('@') == -1)
+            return message.substring(1);
+        // /command@botname
+        if (message.indexOf(' ') == -1 && message.indexOf('@') != -1)
+            return message.substring(1, message.indexOf('@'));
+        // /command arg1 arg2
+        // /command arg1 arg2@botname
+        return message.substring(1, message.indexOf(' '));
+    }
+
+    public static String[] getCommandArgs(String message, String commandName) {
+        // /command arg1 arg2 -> arg1 arg2
+        String args = message.substring(message.indexOf(commandName) + commandName.length());
+
+        if (args.toUpperCase().endsWith("BOT")) {
+            // arg1 arg2@MyBot
+            if (args.lastIndexOf(' ') < args.lastIndexOf('@'))
+                args = args.substring(0, args.lastIndexOf('@'));
         }
-        return command.substring(1);
-    }
-
-    public static String getCommandName(String commandBody) {
-        return commandBody.split(" ")[0];
-    }
-
-    public static List<String> getCommandArgs(String commandBody) {
-        List<String> list = Arrays.asList(commandBody.split(" "));
-        if (list.size() > 1) {
-            // remove command name from list
-            return list.subList(1, list.size());
-        } else return new ArrayList<>();
+        return args.trim().split("");
     }
 }

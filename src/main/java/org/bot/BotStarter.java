@@ -31,6 +31,7 @@ public class BotStarter {
         TelegramBotsApi botsApi = new TelegramBotsApi();
 
         try {
+            System.out.println("Starting bot");
             botsApi.registerBot(new WhereIsMyCardBot(botName, token));
         } catch (TelegramApiException e) {
             e.printStackTrace();

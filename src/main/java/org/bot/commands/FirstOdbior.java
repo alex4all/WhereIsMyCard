@@ -25,16 +25,15 @@ public class FirstOdbior extends Command {
 
     @Override
     protected void initializeInternal(Update update) {
-        List<String> args = CommandsManager.getCommandArgs(commandBody);
-        if (args.size() == 0) {
+        if (commandArgs.length == 0) {
             daysCount = 1;
             return;
         }
 
         try {
-            daysCount = Integer.parseInt(args.get(0));
+            daysCount = Integer.parseInt(commandArgs[0]);
         } catch (NumberFormatException e) {
-            throw new CommandParseException("Чего это ты мне подсунул? Это число по-твоему " + args.get(0) + "?");
+            throw new CommandParseException("Чего это ты мне подсунул? Это число по-твоему " + commandArgs[0] + "?");
         }
     }
 
