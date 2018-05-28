@@ -10,16 +10,21 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class AppointmentDatesManager {
-    private static final String DATE_PATTERN = "yyyy-MM-dd";
+    public static final String DATE_PATTERN = "yyyy-MM-dd";
+    private static final AppointmentDatesManager INSTANCE = new AppointmentDatesManager();
 
-    private static final long REQUEST_DELAY = 1000;
+
+    private static final int DAYS_TO_SCAN = 180;
+    private static final long UPDATE_PERIOD = 30 * 60 * 1000;
+    private static final long REQUEST_DELAY = 2500;
     private static final int MAX_AVAILABLE_DATES = 10;
 
     private final Map<AppointmentDate.Type, TreeMap<Long, AppointmentDate>> appointmentCache;
     private final Lock readLock;
     private final Lock writeLock;
 
-    public AppointmentDatesManager(int daysToScan, long updatePeriod) {
+
+    private AppointmentDatesManager() {
         appointmentCache = new HashMap<>();
         for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
             appointmentCache.put(type, new TreeMap<>());
@@ -30,14 +35,24 @@ public class AppointmentDatesManager {
         writeLock = lock.writeLock();
 
         Timer timer = new Timer(true);
-        TimerTask timerTask = new UpdateTask(daysToScan);
-        timer.schedule(timerTask, 0, updatePeriod);
+        TimerTask timerTask = new UpdateTask(DAYS_TO_SCAN);
+        timer.schedule(timerTask, 0, UPDATE_PERIOD);
+    }
 
+    public static AppointmentDatesManager getInstance() {
+        return INSTANCE;
+    }
+
+    public List<AppointmentDate> getDateInfo(Date date) throws ParseException {
+        return getDateInfo(date.getTime());
     }
 
     public List<AppointmentDate> getDateInfo(String date) throws ParseException {
+        return getDateInfo(Utils.dateToMills(date, new SimpleDateFormat(DATE_PATTERN)));
+    }
+
+    public List<AppointmentDate> getDateInfo(long dateAsMills) throws ParseException {
         List<AppointmentDate> dates = new ArrayList<>();
-        Long dateAsMills = Utils.dateToMills(date, new SimpleDateFormat(DATE_PATTERN));
         readLock.lock();
         try {
             for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
