@@ -58,6 +58,7 @@ public class CommandsManager {
             if (args.lastIndexOf(' ') < args.lastIndexOf('@'))
                 args = args.substring(0, args.lastIndexOf('@'));
         }
-        return args.trim().split("");
+        // arg1 arg2 -> [arg1, arg2]
+        return args.trim().split(" ");
     }
 }
