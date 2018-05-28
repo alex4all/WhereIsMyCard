@@ -5,9 +5,7 @@ import org.bot.commands.Command;
 import org.reflections.Reflections;
 import org.telegram.telegrambots.api.objects.Update;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class CommandsManager {
 
@@ -49,7 +47,7 @@ public class CommandsManager {
         return message.substring(1, message.indexOf(' '));
     }
 
-    public static String[] getCommandArgs(String message, String commandName) {
+    public static List<String> getCommandArgs(String message, String commandName) {
         // /command arg1 arg2 -> arg1 arg2
         String args = message.substring(message.indexOf(commandName) + commandName.length());
 
@@ -58,7 +56,10 @@ public class CommandsManager {
             if (args.lastIndexOf(' ') < args.lastIndexOf('@'))
                 args = args.substring(0, args.lastIndexOf('@'));
         }
+        args = args.trim();
+        if(args.length() == 0)
+            return new ArrayList<>(1);
         // arg1 arg2 -> [arg1, arg2]
-        return args.trim().split(" ");
+        return Arrays.asList(args.trim().split(" "));
     }
 }

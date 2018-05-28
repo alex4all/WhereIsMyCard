@@ -36,9 +36,9 @@ public class DateInfo extends Command {
     @Override
     protected void initializeInternal(Update update) {
 
-        if (commandArgs.length != 1)
+        if (commandArgs.size() != 1)
             throw new CommandParseException("Incorrect count of args. You have to provide date using following pattern: " + DATE_PATTERN);
-        String dateToCheck = commandArgs[0];
+        String dateToCheck = commandArgs.get(0);
         try {
             date = dateFormat.parse(dateToCheck);
         } catch (ParseException e) {

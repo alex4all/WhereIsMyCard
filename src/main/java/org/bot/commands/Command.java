@@ -4,13 +4,15 @@ import org.bot.CommandParseException;
 import org.bot.CommandResultHandler;
 import org.telegram.telegrambots.api.objects.Update;
 
+import java.util.List;
+
 public abstract class Command {
 
     private boolean initialized = false;
     protected long chatId;
-    protected String[] commandArgs;
+    protected List<String> commandArgs;
 
-    public void initialize(Update update, String [] commandArgs) {
+    public void initialize(Update update, List<String> commandArgs) {
         chatId = update.getMessage().getChatId();
         this.commandArgs = commandArgs;
         initializeInternal(update);
@@ -27,7 +29,7 @@ public abstract class Command {
         return chatId;
     }
 
-    public String[] getCommandArgs() {
+    public List<String> getCommandArgs() {
         return commandArgs;
     }
 
