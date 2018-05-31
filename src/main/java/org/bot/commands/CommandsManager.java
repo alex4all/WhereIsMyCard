@@ -1,7 +1,5 @@
-package org.bot;
+package org.bot.commands;
 
-import org.bot.commands.BotCommand;
-import org.bot.commands.Command;
 import org.reflections.Reflections;
 import org.telegram.telegrambots.api.objects.Update;
 

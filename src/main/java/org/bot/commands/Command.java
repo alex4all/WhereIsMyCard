@@ -1,7 +1,5 @@
 package org.bot.commands;
 
-import org.bot.CommandParseException;
-import org.bot.CommandResultHandler;
 import org.telegram.telegrambots.api.objects.Update;
 
 import java.util.List;

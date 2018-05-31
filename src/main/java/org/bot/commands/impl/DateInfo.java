@@ -1,6 +1,11 @@
-package org.bot.commands;
+package org.bot.commands.impl;
 
-import org.bot.*;
+import org.bot.appointment.AppointmentDate;
+import org.bot.appointment.AppointmentDatesManager;
+import org.bot.commands.BotCommand;
+import org.bot.commands.Command;
+import org.bot.commands.CommandParseException;
+import org.bot.commands.CommandResultHandler;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Update;
 
@@ -10,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static org.bot.AppointmentDatesManager.DATE_PATTERN;
+import static org.bot.appointment.AppointmentDatesManager.DATE_PATTERN;
 
 @BotCommand(name = "date_info")
 public class DateInfo extends Command {

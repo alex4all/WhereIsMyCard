@@ -1,4 +1,4 @@
-package org.bot;
+package org.bot.utils;
 
 import java.text.DateFormat;
 import java.text.ParseException;

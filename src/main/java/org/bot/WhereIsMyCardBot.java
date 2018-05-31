@@ -1,6 +1,10 @@
 package org.bot;
 
+import org.bot.appointment.AppointmentDatesManager;
 import org.bot.commands.Command;
+import org.bot.commands.CommandParseException;
+import org.bot.commands.CommandResultHandler;
+import org.bot.commands.CommandsManager;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
