@@ -9,15 +9,15 @@ import java.util.*;
 public class MonthsKeyboard {
 
     public static final String DEF_DATE_PATTERN = "LLLL YYYY";
-    public static final String DEF_CALLBACK_DATE_PATTERN = "yyyy-MM-dd HH";
-    public static final String DEF_CALLBACK_PREFIX = "ClickOnMonth_";
+    public static final String DEF_CALLBACK_DATE_PATTERN = "yyyy-MM-dd";
+    public static final String MONTH_CLICK_PREFIX = "ClickOnMonth_";
 
     private Date begin;
     private Date end;
 
     private String datePattern = DEF_DATE_PATTERN;
     private String callBackDatePattern = DEF_CALLBACK_DATE_PATTERN;
-    private String callbackPrefix = DEF_CALLBACK_PREFIX;
+    private String callbackPrefix = MONTH_CLICK_PREFIX;
 
     public MonthsKeyboard begin(Date begin) {
         this.begin = begin;
@@ -64,7 +64,7 @@ public class MonthsKeyboard {
             rowInline.add(new InlineKeyboardButton().setText(textDate).setCallbackData(callbackPrefix + callbackDate));
             rowsInline.add(rowInline);
             calendar.add(Calendar.MONTH, 1);
-        } while (calendar.get(Calendar.MONTH) < calendarEnd.get(Calendar.MONTH));
+        } while (calendar.get(Calendar.MONTH) <= calendarEnd.get(Calendar.MONTH));
 
         markupInline.setKeyboard(rowsInline);
         return markupInline;

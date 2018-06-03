@@ -22,11 +22,31 @@ import java.util.List;
 @BotCommand(name = "date_info")
 public class DateInfo extends Command {
     private static final AppointmentDatesManager DATES_MANAGER = AppointmentDatesManager.getInstance();
-    private Message lastBotBessage;
+    private Message lastBotMessage;
 
     @Override
     public void process(CommandResultHandler handler, Update update) {
         showMonthsKeyboard(handler, update, false);
+    }
+
+    @Override
+    public void processCallbackQuery(CommandResultHandler handler, Update update) {
+        String callbackQuery = update.getCallbackQuery().getData();
+        System.out.println("processCallbackQuery callbackQuery: " + callbackQuery);
+        if (callbackQuery.startsWith(MonthsKeyboard.MONTH_CLICK_PREFIX)) {
+            String date = callbackQuery.substring(MonthsKeyboard.MONTH_CLICK_PREFIX.length());
+            showCalendarKeyboard(date, handler, update);
+        } else if (callbackQuery.startsWith(CalendarKeyboard.PREVIOUS_CLICK)) {
+            String date = callbackQuery.substring(CalendarKeyboard.PREVIOUS_CLICK.length());
+            showCalendarKeyboard(date, handler, update);
+        } else if (callbackQuery.startsWith(CalendarKeyboard.NEXT_CLICK_PREFIX)) {
+            String date = callbackQuery.substring(CalendarKeyboard.NEXT_CLICK_PREFIX.length());
+            showCalendarKeyboard(date, handler, update);
+        } else if (callbackQuery.startsWith(CalendarKeyboard.DAY_CLICK_PREFIX)) {
+            showDayInfo(handler, update);
+        } else if (callbackQuery.equals(CalendarKeyboard.BACK_CLICK_PREFIX)) {
+            showMonthsKeyboard(handler, update, true);
+        }
     }
 
     private void showMonthsKeyboard(CommandResultHandler handler, Update update, boolean edit) {
@@ -41,7 +61,7 @@ public class DateInfo extends Command {
                     .enableHtml(true)
                     .setChatId(getChatId(update))
                     .setMessageId(update.getCallbackQuery().getMessage().getMessageId())
-                    .setText("Select date")
+                    .setText("Select month")
                     .setReplyMarkup(builder.create());
             handler.execute(message);
         } else {
@@ -49,69 +69,66 @@ public class DateInfo extends Command {
                     .enableHtml(true)
                     .setChatId(getChatId(update))
 
-                    .setText("Select date")
+                    .setText("Select month")
                     .setReplyMarkup(builder.create());
             handler.execute(message);
         }
     }
 
-    @Override
-    public void processCallbackQuery(CommandResultHandler handler, Update update) {
+    private void showCalendarKeyboard(String date, CommandResultHandler handler, Update update) {
+        Calendar calendar = Calendar.getInstance();
+        Date begin = calendar.getTime();
+        calendar.add(Calendar.DAY_OF_YEAR, AppointmentDatesManager.DAYS_TO_SCAN);
+        Date end = calendar.getTime();
+        System.out.println("showCalendarKeyboard month: " + date);
+        CalendarKeyboard builder = new CalendarKeyboard().begin(begin).end(end);
+        try {
+            Date month = new SimpleDateFormat(MonthsKeyboard.DEF_CALLBACK_DATE_PATTERN).parse(date);
+            System.out.println("Parsed month: " + month.toString());
+            builder.month(month);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+
+        EditMessageText message = new EditMessageText()
+                .setChatId(update.getCallbackQuery().getMessage().getChatId())
+                .enableHtml(true)
+                .setText("Select day of month")
+                .setMessageId(update.getCallbackQuery().getMessage().getMessageId())
+                .setReplyMarkup(builder.create());
+        handler.execute(message);
+    }
+
+    private void showDayInfo(CommandResultHandler handler, Update update) {
         String data = update.getCallbackQuery().getData();
-        if (data.startsWith(MonthsKeyboard.DEF_CALLBACK_PREFIX)) {
-            String date = data.substring(MonthsKeyboard.DEF_CALLBACK_PREFIX.length());
-            System.out.println("Callback date: " + date);
+        System.out.println("get data for provided month: " + data);
+        String date = data.substring(CalendarKeyboard.DAY_CLICK_PREFIX.length());
+        System.out.println("Callback month without prefix: " + date);
+        try {
+            Date dayOfMonth = new SimpleDateFormat(CalendarKeyboard.DEF_CALLBACK_DATE_PATTERN).parse(date);
+            System.out.println("Parsed month: " + dayOfMonth.toString());
+            List<AppointmentDate> result = DATES_MANAGER.getDateInfo(dayOfMonth);
 
-            CalendarKeyboard builder = new CalendarKeyboard();
-            try {
-                Date month = new SimpleDateFormat(MonthsKeyboard.DEF_CALLBACK_DATE_PATTERN).parse(date);
-                System.out.println("Parsed date: " + month.toString());
-                builder.date(month);
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
+            if (lastBotMessage == null) {
+                SendMessage message = new SendMessage()
+                        .enableHtml(true)
+                        .setChatId(update.getCallbackQuery().getMessage().getChatId())
+                        .setText(dateInfoToString(date, result));
+                lastBotMessage = handler.execute(message);
+            } else {
+                EditMessageText message = new EditMessageText()
+                        .enableHtml(true)
+                        .setChatId(update.getCallbackQuery().getMessage().getChatId())
+                        .setMessageId(lastBotMessage.getMessageId())
+                        .setText(dateInfoToString(date, result));
+                handler.execute(message);
             }
-
-            EditMessageText message = new EditMessageText()
-                    .setChatId(update.getCallbackQuery().getMessage().getChatId())
-                    .enableHtml(true)
-                    .setText("Select day of month")
-                    .setMessageId(update.getCallbackQuery().getMessage().getMessageId())
-                    .setReplyMarkup(builder.create());
-            handler.execute(message);
-
-        } else if (data.startsWith(CalendarKeyboard.DEF_CALLBACK_PREFIX)) {
-            System.out.println("get data for provided date: " + data);
-
-            String date = data.substring(CalendarKeyboard.DEF_CALLBACK_PREFIX.length());
-            System.out.println("Callback date without prefix: " + date);
-            try {
-                Date dayOfMonth = new SimpleDateFormat(CalendarKeyboard.DEF_CALLBACK_DATE_PATTERN).parse(date);
-                System.out.println("Parsed date: " + dayOfMonth.toString());
-                List<AppointmentDate> result = DATES_MANAGER.getDateInfo(dayOfMonth);
-
-                if (lastBotBessage == null) {
-                    SendMessage message = new SendMessage()
-                            .enableHtml(true)
-                            .setChatId(update.getCallbackQuery().getMessage().getChatId())
-                            .setText(dateInfoToString(result));
-                    lastBotBessage = handler.execute(message);
-                } else {
-                    EditMessageText message = new EditMessageText()
-                            .enableHtml(true)
-                            .setChatId(update.getCallbackQuery().getMessage().getChatId())
-                            .setMessageId(lastBotBessage.getMessageId())
-                            .setText(dateInfoToString(result));
-                    handler.execute(message);
-                }
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
-            }
-        } else if (data.equals(CalendarKeyboard.DEF_CALLBACK_BACK)) {
-            showMonthsKeyboard(handler, update, true);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private String dateInfoToString(List<AppointmentDate> dateInfo) {
+    private String dateInfoToString(String date, List<AppointmentDate> dateInfo) {
         // verify thar result is valid. no null elements
         List<AppointmentDate> verifiedDates = new ArrayList<>();
         for (AppointmentDate appDate : dateInfo) {
@@ -120,11 +137,13 @@ public class DateInfo extends Command {
         }
 
         if (verifiedDates.size() == 0) {
-            return "No data found for provided date";
+            StringBuilder result = new StringBuilder();
+            result.append("<b>").append(date).append(":</b>").append("No data found");
+            return result.toString();
         }
 
         StringBuilder result = new StringBuilder();
-        result.append("<b>").append(verifiedDates.get(0).getDate()).append(":</b>").append(System.lineSeparator());
+        result.append("<b>").append(date).append(":</b>").append(System.lineSeparator());
 
         for (AppointmentDate appDate : dateInfo)
             result.append(appDate.toMessageWithType()).append(System.lineSeparator());
