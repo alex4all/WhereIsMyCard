@@ -8,6 +8,16 @@ public abstract class Command {
 
     protected List<String> commandArgs;
 
+    protected int userId;
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
+
     public void initialize(List<String> commandArgs) {
         this.commandArgs = commandArgs;
     }
@@ -20,9 +30,8 @@ public abstract class Command {
         return commandArgs;
     }
 
-    public Long getChatId(Update update)
-    {
-        if(update.hasCallbackQuery())
+    public Long getChatId(Update update) {
+        if (update.hasCallbackQuery())
             return update.getCallbackQuery().getMessage().getChatId();
         return update.getMessage().getChatId();
     }
