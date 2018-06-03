@@ -1,4 +1,4 @@
-package org.bot.utils;
+package org.bot.keyboards;
 
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -20,6 +20,7 @@ public class CalendarKeyboard {
     public static final String PREVIOUS_CLICK = "ClickOnPrevious_";
     public static final String NEXT_CLICK_PREFIX = "ClickOnNext_";
     public static final String BACK_CLICK_PREFIX = "ClickOnBack";
+    public static final String WARNING_PREFIX = "WARNING";
 
     private Date month;
     private Date begin;
@@ -158,6 +159,8 @@ public class CalendarKeyboard {
             if (prevMonth >= minBorder) {
                 String callbackDate = callbackFormat.format(calendar.getTime());
                 prevButton.setCallbackData(PREVIOUS_CLICK + callbackDate);
+            } else {
+                prevButton.setCallbackData(WARNING_PREFIX + "Previous month is out of range");
             }
         }
 
@@ -175,6 +178,8 @@ public class CalendarKeyboard {
             if (nextMonth <= maxBorder) {
                 String callbackDate = callbackFormat.format(calendar.getTime());
                 nextButton.setCallbackData(NEXT_CLICK_PREFIX + callbackDate);
+            } else {
+                nextButton.setCallbackData(WARNING_PREFIX + "Next month is out of range");
             }
         }
         return bottomPanel;

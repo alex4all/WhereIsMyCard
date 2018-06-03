@@ -5,8 +5,8 @@ import org.bot.appointment.AppointmentDatesManager;
 import org.bot.commands.BotCommand;
 import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
-import org.bot.utils.CalendarKeyboard;
-import org.bot.utils.MonthsKeyboard;
+import org.bot.keyboards.CalendarKeyboard;
+import org.bot.keyboards.MonthsKeyboard;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.Message;
@@ -46,6 +46,27 @@ public class DateInfo extends Command {
             showDayInfo(handler, update);
         } else if (callbackQuery.equals(CalendarKeyboard.BACK_CLICK_PREFIX)) {
             showMonthsKeyboard(handler, update, true);
+        } else if (callbackQuery.startsWith(CalendarKeyboard.WARNING_PREFIX)) {
+            printWarning(handler, update);
+        }
+    }
+
+    private void printWarning(CommandResultHandler handler, Update update) {
+        String data = update.getCallbackQuery().getData();
+        String warning = data.substring(CalendarKeyboard.WARNING_PREFIX.length());
+        if (lastBotMessage == null) {
+            SendMessage message = new SendMessage()
+                    .enableHtml(true)
+                    .setChatId(update.getCallbackQuery().getMessage().getChatId())
+                    .setText(warning);
+            lastBotMessage = handler.execute(message);
+        } else {
+            EditMessageText message = new EditMessageText()
+                    .enableHtml(true)
+                    .setChatId(update.getCallbackQuery().getMessage().getChatId())
+                    .setMessageId(lastBotMessage.getMessageId())
+                    .setText(warning);
+            handler.execute(message);
         }
     }
 
@@ -68,7 +89,6 @@ public class DateInfo extends Command {
             SendMessage message = new SendMessage()
                     .enableHtml(true)
                     .setChatId(getChatId(update))
-
                     .setText("Select month")
                     .setReplyMarkup(builder.create());
             handler.execute(message);
