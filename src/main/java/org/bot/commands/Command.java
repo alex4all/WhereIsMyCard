@@ -24,7 +24,9 @@ public abstract class Command {
 
     public abstract void process(CommandResultHandler handler, Update update);
 
-    public abstract void processCallbackQuery(CommandResultHandler handler, Update update);
+    public void processCallbackQuery(CommandResultHandler handler, Update update) {
+
+    }
 
     public List<String> getCommandArgs() {
         return commandArgs;
