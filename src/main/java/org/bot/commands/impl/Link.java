@@ -12,15 +12,16 @@ public class Link extends Command {
     private static final String URL = "http://webqms.pl/puw/index.php";
 
     @Override
-    protected void processInternal(CommandResultHandler handler) {
+    public void process(CommandResultHandler handler, Update update) {
         SendMessage message = new SendMessage();
         message.enableHtml(true);
-        message.setChatId(getChatId());
+        message.setChatId(update.getMessage().getChatId());
         message.setText(URL);
         handler.execute(message);
     }
 
     @Override
-    protected void initializeInternal(Update update) {
+    public void processCallbackQuery(CommandResultHandler handler, Update update) {
+
     }
 }

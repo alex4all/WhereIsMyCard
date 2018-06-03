@@ -8,24 +8,24 @@ import org.telegram.telegrambots.api.objects.Update;
 
 @BotCommand(name = "start")
 public class Start extends Command {
-    private String userName;
 
     @Override
-    protected void processInternal(CommandResultHandler handler) {
+    public void process(CommandResultHandler handler, Update update) {
         SendMessage message = new SendMessage();
         message.enableHtml(true);
-        message.setChatId(getChatId());
-        message.setText(getStartMessage());
+        message.setChatId(update.getMessage().getChatId());
+        message.setText(getStartMessage(update.getMessage().getChat().getFirstName()));
         handler.execute(message);
     }
 
     @Override
-    protected void initializeInternal(Update update) {
-        userName = update.getMessage().getChat().getFirstName();
+    public void processCallbackQuery(CommandResultHandler handler, Update update) {
+
     }
 
-    private String getStartMessage() {
-        return "Привет, " + userName + "! Добро пожаловать в сообщество людей, отчаявщихся получить карту побыту. " +
-                "Я помогу тебе получить информацию о доступных талончиках в ужонде";
+    private String getStartMessage(String userName) { //TODO
+        return "Hello, " + userName + "! Welcome to community of peoples who waiting for \"karta pobyitu\". " +
+                "I can help you to get information about available dates in Urzand. Maybe someday I also will ba able to" +
+                " give you this card for money =)";
     }
 }

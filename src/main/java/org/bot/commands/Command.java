@@ -6,33 +6,25 @@ import java.util.List;
 
 public abstract class Command {
 
-    private boolean initialized = false;
-    protected long chatId;
     protected List<String> commandArgs;
 
-    public void initialize(Update update, List<String> commandArgs) {
-        chatId = update.getMessage().getChatId();
+    public void initialize(List<String> commandArgs) {
         this.commandArgs = commandArgs;
-        initializeInternal(update);
-        initialized = true;
     }
 
-    public void process(CommandResultHandler handler) {
-        if (!initialized)
-            throw new CommandParseException(this.getClass().getName() + " is not initialized");
-        processInternal(handler);
-    }
+    public abstract void process(CommandResultHandler handler, Update update);
 
-    public long getChatId() {
-        return chatId;
-    }
+    public abstract void processCallbackQuery(CommandResultHandler handler, Update update);
 
     public List<String> getCommandArgs() {
         return commandArgs;
     }
 
-    protected abstract void processInternal(CommandResultHandler handler);
-
-    protected abstract void initializeInternal(Update update);
+    public Long getChatId(Update update)
+    {
+        if(update.hasCallbackQuery())
+            return update.getCallbackQuery().getMessage().getChatId();
+        return update.getMessage().getChatId();
+    }
 }
 

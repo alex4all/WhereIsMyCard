@@ -5,6 +5,8 @@ import org.bot.commands.Command;
 import org.bot.commands.CommandParseException;
 import org.bot.commands.CommandResultHandler;
 import org.bot.commands.CommandsManager;
+import org.bot.utils.CommandsHistory;
+import org.bot.utils.UpdateToID;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -32,16 +34,27 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
+        if (update.hasCallbackQuery()) {
+            System.out.println("Callback: " + update.getCallbackQuery().getData());
+
+            Command command = CommandsHistory.getInstance().getCommand(UpdateToID.callbackQuery(update));
+            if (command != null)
+                command.processCallbackQuery(new CommandResultHandler(this), update);
+            else
+                sendError("Looks like you need to process command one more time =)",
+                        update.getCallbackQuery().getMessage().getChatId());
+        }
+
         if (update.hasMessage() && update.getMessage().hasText()) {
             String message = update.getMessage().getText();
             System.out.println("Update received: " + message);
             if (isCommand(message)) {
                 try {
                     Command command = commandsManager.createCommand(update);
-                    command.process(new CommandResultHandler(this));
+                    CommandsHistory.getInstance().putCommand(UpdateToID.message(update), command);
+                    command.process(new CommandResultHandler(this), update);
                     return;
-                } catch (CommandParseException e)
-                {
+                } catch (CommandParseException e) {
                     e.printStackTrace();
                     sendError(e.getMessage(), update.getMessage().getChatId());
                 }

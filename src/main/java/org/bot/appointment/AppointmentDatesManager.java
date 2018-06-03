@@ -17,7 +17,7 @@ public class AppointmentDatesManager {
     private static final AppointmentDatesManager INSTANCE = new AppointmentDatesManager();
 
 
-    private static final int DAYS_TO_SCAN = 180;
+    public static final int DAYS_TO_SCAN = 180;
     private static final long UPDATE_PERIOD = 30 * 60 * 1000;
     private static final long REQUEST_DELAY = 2500;
     private static final int MAX_AVAILABLE_DATES = 10;
@@ -48,6 +48,13 @@ public class AppointmentDatesManager {
 
     public List<AppointmentDate> getDateInfo(Date date) throws ParseException {
         return getDateInfo(date.getTime());
+    }
+
+    public Set<Long> getAnyAvailableDates() {
+        Set<Long> odbior = new HashSet<>(appointmentCache.get(AppointmentDate.Type.ODBIOR).keySet());
+        Set<Long> zlozenie = appointmentCache.get(AppointmentDate.Type.ZLOZENIE).keySet();
+        odbior.retainAll(zlozenie);
+        return odbior;
     }
 
     public List<AppointmentDate> getDateInfo(String date) throws ParseException {

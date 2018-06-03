@@ -23,10 +23,10 @@ public class CommandsManager {
         String message = update.getMessage().getText();
         String commandName = getCommandName(message);
         if (!commandsByName.containsKey(commandName))
-            throw new CommandParseException("Command doesn't exists: " + commandName);
+            throw new CommandParseException("Unrecognized command. Say what?");
         try {
             Command command = commandsByName.get(commandName).newInstance();
-            command.initialize(update, getCommandArgs(message, commandName));
+            command.initialize(getCommandArgs(message, commandName));
             return command;
         } catch (InstantiationException | IllegalAccessException e) {
             throw new CommandParseException("Can't process command: " + commandName);

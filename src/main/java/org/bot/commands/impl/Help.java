@@ -10,16 +10,17 @@ import org.telegram.telegrambots.api.objects.Update;
 public class Help extends Command {
 
     @Override
-    protected void processInternal(CommandResultHandler handler) {
+    public void process(CommandResultHandler handler, Update update) {
         SendMessage message = new SendMessage();
         message.enableHtml(true);
-        message.setChatId(getChatId());
+        message.setChatId(update.getMessage().getChatId());
         message.setText(generateHelpMessage());
         handler.execute(message);
     }
 
     @Override
-    protected void initializeInternal(Update update) {
+    public void processCallbackQuery(CommandResultHandler handler, Update update) {
+
     }
 
     private String generateHelpMessage() {
@@ -31,4 +32,5 @@ public class Help extends Command {
         builder.append("<b>/help</b> - list of available commands");
         return builder.toString();
     }
+
 }
