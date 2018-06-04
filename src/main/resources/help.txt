@@ -1,5 +1,4 @@
-first_odbior - [1,10] get list of first available dates. You can provide count argument
-first_zlozenie - [1,10] get list of first available dates. You can provide count argument
-date_info - yyyy-MM-dd get information about provided date. You have to provide date argument
+first_appointment - get first available appointment date
+date_info - get information about selected date
 link - get Urzad URL
 help - list of available commands

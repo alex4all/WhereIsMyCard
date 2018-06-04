@@ -55,20 +55,7 @@ public class DateInfo extends Command {
     private void printWarning(CommandResultHandler handler, Update update) {
         String data = update.getCallbackQuery().getData();
         String warning = data.substring(CalendarKeyboard.WARNING_PREFIX.length());
-        if (lastBotMessage == null) {
-            SendMessage message = new SendMessage()
-                    .enableHtml(true)
-                    .setChatId(update.getCallbackQuery().getMessage().getChatId())
-                    .setText(warning);
-            lastBotMessage = handler.execute(message);
-        } else {
-            EditMessageText message = new EditMessageText()
-                    .enableHtml(true)
-                    .setChatId(update.getCallbackQuery().getMessage().getChatId())
-                    .setMessageId(lastBotMessage.getMessageId())
-                    .setText(warning);
-            handler.execute(message);
-        }
+        sendOrEdit(handler, update, warning);
     }
 
     private void showMonthsKeyboard(CommandResultHandler handler, Update update, boolean edit) {

@@ -93,4 +93,11 @@ public class AppointmentDate {
         builder.append(availableTime).append(" <i>").append(getTimeAfterUpdate()).append("</i>");
         return builder.toString();
     }
+
+    public String toMessageWithBoth() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("<b>").append(type).append(" ").append(date).append("</b>").append(":").append(System.lineSeparator());
+        builder.append(availableTime).append(" <i>").append(getTimeAfterUpdate()).append("</i>");
+        return builder.toString();
+    }
 }
