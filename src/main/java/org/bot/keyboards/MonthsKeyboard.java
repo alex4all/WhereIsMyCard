@@ -1,12 +1,14 @@
 package org.bot.keyboards;
 
+import org.bot.utils.DatesCompare;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 
 public class MonthsKeyboard {
 
@@ -52,7 +54,6 @@ public class MonthsKeyboard {
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowsInline = new ArrayList<>();
 
-
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(begin);
         Calendar calendarEnd = Calendar.getInstance();
@@ -60,13 +61,6 @@ public class MonthsKeyboard {
         SimpleDateFormat textDateFormat = new SimpleDateFormat(datePattern);
         SimpleDateFormat callbackFormat = new SimpleDateFormat(callBackDatePattern);
 
-        LocalDate endDate = end.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        int endMonth = endDate.getMonth().getValue();
-        int endYear = endDate.getYear();
-        int currentMonth;
-        int currentYear;
-        boolean sameYear;
-        boolean diffYear;
         do {
             String textDate = textDateFormat.format(calendar.getTime());
             String callbackDate = callbackFormat.format(calendar.getTime());
@@ -74,12 +68,7 @@ public class MonthsKeyboard {
             rowInline.add(new InlineKeyboardButton().setText(textDate).setCallbackData(callbackPrefix + callbackDate));
             rowsInline.add(rowInline);
             calendar.add(Calendar.MONTH, 1);
-            LocalDate currentDate = calendar.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            currentMonth = currentDate.getMonth().getValue();
-            currentYear = currentDate.getYear();
-            diffYear = currentYear < endYear;
-            sameYear = currentYear == endYear & currentMonth <= endMonth;
-        } while (diffYear || sameYear);
+        } while (DatesCompare.beforeOrSameDay(calendar.getTime(), end));
 
         markupInline.setKeyboard(rowsInline);
         return markupInline;
