@@ -19,9 +19,4 @@ public class Link extends Command {
         message.setText(URL);
         handler.execute(message);
     }
-
-    @Override
-    public void processCallbackQuery(CommandResultHandler handler, Update update) {
-
-    }
 }

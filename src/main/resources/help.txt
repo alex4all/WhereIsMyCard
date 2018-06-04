@@ -2,3 +2,4 @@ first_appointment - get first available appointment date
 date_info - get information about selected date
 link - get Urzad URL
 help - list of available commands
+github - source code

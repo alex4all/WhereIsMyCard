@@ -65,5 +65,18 @@ public abstract class Command {
             handler.execute(message);
         }
     }
+
+    protected void sendMessage(CommandResultHandler handler, Update update, String text) {
+        long chatId;
+        if (update.hasCallbackQuery())
+            chatId = update.getCallbackQuery().getMessage().getChatId();
+        else
+            chatId = update.getMessage().getChatId();
+        SendMessage message = new SendMessage()
+                .enableHtml(true)
+                .setChatId(chatId)
+                .setText(text);
+        lastBotMessage = handler.execute(message);
+    }
 }
 

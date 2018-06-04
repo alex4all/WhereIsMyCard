@@ -28,6 +28,7 @@ public class Help extends Command {
         builder.append("<b>/first_appointment [1,10]</b> - get first available appointment date").append(System.lineSeparator());
         builder.append("<b>/date_info</b> - get information about selected date").append(System.lineSeparator());
         builder.append("<b>/link</b> - get Urzad URL").append(System.lineSeparator());
+        builder.append("<b>/github</b> - get GitHub url to look at source code or even improve project");
         builder.append("<b>/help</b> - list of available commands");
         return builder.toString();
     }
