@@ -1,9 +1,11 @@
 package org.bot.keyboards;
 
+import org.bot.utils.DatesCompare;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -102,21 +104,22 @@ public class CalendarKeyboard {
         calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMinimum(Calendar.DAY_OF_MONTH));
         int currentMonth = calendar.get(Calendar.MONTH);
 
-        // find first day of first week in this month
+        // find first day of first week in this month (begin of week possible can be in prev month)
         calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMinimum(Calendar.DAY_OF_MONTH));
         calendar.add(Calendar.DAY_OF_YEAR, 1 - calendar.get(Calendar.DAY_OF_WEEK));
-        int firstWeekBegin = calendar.get(Calendar.DAY_OF_YEAR);
-        System.out.println("firstWeekBegin: " + firstWeekBegin);
+        Date firstWeekBegin = calendar.getTime();
+        System.out.println("firstWeekBegin: " + firstWeekBegin.toString());
 
-        // find last day of last week in this month
+        // find last day of last week of this month (end of week possible can be in next month)
         calendar.setTime(month);
         calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
         calendar.add(Calendar.DAY_OF_YEAR, 7 - calendar.get(Calendar.DAY_OF_WEEK));
-        int lastWeekEnd = calendar.get(Calendar.DAY_OF_YEAR);
-        System.out.println("lastWeekEnd: " + lastWeekEnd);
+        Date lastDayOfLastWeek = calendar.getTime();
+        System.out.println("lastDayOfLastWeek: " + lastDayOfLastWeek.toString());
 
+        calendar.setTime(month);
+        calendar.setTime(firstWeekBegin);
         SimpleDateFormat callbackFormat = new SimpleDateFormat(callbackDatePattern);
-        calendar.set(Calendar.DAY_OF_YEAR, firstWeekBegin);
         do {
             List<InlineKeyboardButton> daysOfWeek = new ArrayList<>(7);
             for (int i = 0; i < 7; i++) {
@@ -130,15 +133,15 @@ public class CalendarKeyboard {
                 calendar.add(Calendar.DAY_OF_YEAR, 1);
             }
             weedDaysGreed.add(daysOfWeek);
-        } while (calendar.get(Calendar.DAY_OF_YEAR) <= lastWeekEnd);
+        } while (DatesCompare.beforeOrSameDay(calendar.getTime(), lastDayOfLastWeek));
         return weedDaysGreed;
     }
 
     private List<InlineKeyboardButton> createBottomPanel() {
         List<InlineKeyboardButton> bottomPanel = new ArrayList<>(1);
-        InlineKeyboardButton prevButton = new InlineKeyboardButton().setText("<").setCallbackData("ignore");
+        InlineKeyboardButton prevButton = new InlineKeyboardButton().setText("<");
         InlineKeyboardButton backButton = new InlineKeyboardButton().setText("Back").setCallbackData(callbackBack);
-        InlineKeyboardButton nextButton = new InlineKeyboardButton().setText(">").setCallbackData("ignore");
+        InlineKeyboardButton nextButton = new InlineKeyboardButton().setText(">");
         bottomPanel.add(prevButton);
         bottomPanel.add(backButton);
         bottomPanel.add(nextButton);
@@ -147,16 +150,12 @@ public class CalendarKeyboard {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(month);
         calendar.add(Calendar.MONTH, -1);
+        // block left button if prev month if out of range
         if (begin == null) {
             String callbackDate = callbackFormat.format(calendar.getTime());
             prevButton.setCallbackData(PREVIOUS_CLICK + callbackDate);
         } else {
-            Date prevDate = calendar.getTime();
-            int prevMonth = prevDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().getMonth().getValue();
-            int minBorder = begin.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().getMonth().getValue();
-            System.out.println("prevMonth: " + prevMonth);
-            System.out.println("minBorder: " + minBorder);
-            if (prevMonth >= minBorder) {
+            if (DatesCompare.afterOrSameMonth(calendar.getTime(), begin)) {
                 String callbackDate = callbackFormat.format(calendar.getTime());
                 prevButton.setCallbackData(PREVIOUS_CLICK + callbackDate);
             } else {
@@ -166,16 +165,12 @@ public class CalendarKeyboard {
 
         calendar.setTime(month);
         calendar.add(Calendar.MONTH, 1);
+        // block right button if next month if out of range
         if (end == null) {
             String callbackDate = callbackFormat.format(calendar.getTime());
             nextButton.setCallbackData(NEXT_CLICK_PREFIX + callbackDate);
         } else {
-            Date nextDate = calendar.getTime();
-            int nextMonth = nextDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().getMonth().getValue();
-            int maxBorder = end.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().getMonth().getValue();
-            System.out.println("nextMonth: " + nextMonth);
-            System.out.println("maxBorder: " + maxBorder);
-            if (nextMonth <= maxBorder) {
+            if (DatesCompare.beforeOrSameMonth(calendar.getTime(), end)) {
                 String callbackDate = callbackFormat.format(calendar.getTime());
                 nextButton.setCallbackData(NEXT_CLICK_PREFIX + callbackDate);
             } else {

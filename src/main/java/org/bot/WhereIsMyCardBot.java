@@ -56,7 +56,6 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
                     Command command = commandsManager.createCommand(update);
                     CommandsHistory.getInstance().putCommand(UpdateToID.message(update), command);
                     command.setUserId(update.getMessage().getFrom().getId());
-
                     command.process(new CommandResultHandler(this), update);
                     return;
                 } catch (CommandParseException e) {

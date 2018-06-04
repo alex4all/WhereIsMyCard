@@ -4,6 +4,8 @@ import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 
 public class MonthsKeyboard {
@@ -57,6 +59,14 @@ public class MonthsKeyboard {
         calendarEnd.setTime(end);
         SimpleDateFormat textDateFormat = new SimpleDateFormat(datePattern);
         SimpleDateFormat callbackFormat = new SimpleDateFormat(callBackDatePattern);
+
+        LocalDate endDate = end.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        int endMonth = endDate.getMonth().getValue();
+        int endYear = endDate.getYear();
+        int currentMonth;
+        int currentYear;
+        boolean sameYear;
+        boolean diffYear;
         do {
             String textDate = textDateFormat.format(calendar.getTime());
             String callbackDate = callbackFormat.format(calendar.getTime());
@@ -64,7 +74,12 @@ public class MonthsKeyboard {
             rowInline.add(new InlineKeyboardButton().setText(textDate).setCallbackData(callbackPrefix + callbackDate));
             rowsInline.add(rowInline);
             calendar.add(Calendar.MONTH, 1);
-        } while (calendar.get(Calendar.MONTH) <= calendarEnd.get(Calendar.MONTH));
+            LocalDate currentDate = calendar.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            currentMonth = currentDate.getMonth().getValue();
+            currentYear = currentDate.getYear();
+            diffYear = currentYear < endYear;
+            sameYear = currentYear == endYear & currentMonth <= endMonth;
+        } while (diffYear || sameYear);
 
         markupInline.setKeyboard(rowsInline);
         return markupInline;
