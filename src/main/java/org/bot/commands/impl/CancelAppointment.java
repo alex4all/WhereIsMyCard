@@ -5,8 +5,8 @@ import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
 import org.telegram.telegrambots.api.objects.Update;
 
-@BotCommand(name = "reg_zlozenie")
-public class RegZlozenie extends Command {
+@BotCommand(name = "cancel_appointment")
+public class CancelAppointment extends Command {
 
     @Override
     public void process(CommandResultHandler handler, Update update) {

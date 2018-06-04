@@ -135,7 +135,7 @@ public class ServerAPI {
      * @param type - kolejka type
      * @return - kolejka id
      */
-    public static String typeToId(AppointmentDate.Type type) {
+    private static String typeToId(AppointmentDate.Type type) {
         if (AppointmentDate.Type.ODBIOR.equals(type))
             return "12";
         else if (AppointmentDate.Type.ZLOZENIE.equals(type))
