@@ -5,15 +5,18 @@ import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 
-import java.util.List;
-
 public abstract class Command {
-
-    protected List<String> commandArgs;
-
     protected int userId;
-
     protected Message lastBotMessage;
+    protected boolean awaitUserInput = false;
+
+    public boolean isAwaitUserInput() {
+        return awaitUserInput;
+    }
+
+    public void setAwaitUserInput(boolean awaitUserInput) {
+        this.awaitUserInput = awaitUserInput;
+    }
 
     public int getUserId() {
         return userId;
@@ -23,18 +26,12 @@ public abstract class Command {
         this.userId = userId;
     }
 
-    public void initialize(List<String> commandArgs) {
-        this.commandArgs = commandArgs;
-    }
-
     public abstract void process(CommandResultHandler handler, Update update);
 
     public void processCallbackQuery(CommandResultHandler handler, Update update) {
-
     }
 
-    public List<String> getCommandArgs() {
-        return commandArgs;
+    public void processUserInput(CommandResultHandler handler, Update update) {
     }
 
     public Long getChatId(Update update) {

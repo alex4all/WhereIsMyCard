@@ -52,11 +52,10 @@ public class AppointmentDate {
     public String getTimeAfterUpdate() {
         long timeAfterUpdate = System.currentTimeMillis() - updatedAt;
         long minutesAgo = timeAfterUpdate / (1000 * 60);
-//        if (minutesAgo < 1)
-//            return "Updated just now";
+        if (minutesAgo < 1)
+            return "Just updated";
         return "Updated " + minutesAgo + " min ago";
     }
-
 
     public String getAvailableTime() {
         return availableTime;
