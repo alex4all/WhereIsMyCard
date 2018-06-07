@@ -1,7 +1,9 @@
 package org.bot.keyboards.adapter;
 
+import org.bot.commands.CommandResultHandler;
 import org.bot.keyboards.VerticalKeyboard;
 import org.bot.utils.DatesCompare;
+import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 
 import java.text.SimpleDateFormat;
@@ -10,7 +12,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public abstract class MonthKeyboardAdapter {
+public abstract class MonthKeyboardAdapter implements KeyboardAdapter {
 
     public static final String DEF_DATE_PATTERN = "LLLL YYYY";
     public static final String DEF_CALLBACK_DATE_PATTERN = "yyyy-MM-dd";
@@ -32,31 +34,6 @@ public abstract class MonthKeyboardAdapter {
     public MonthKeyboardAdapter(Date begin, Date end) {
         this.begin = begin;
         this.end = end;
-    }
-
-    public MonthKeyboardAdapter begin(Date begin) {
-        this.begin = begin;
-        return this;
-    }
-
-    public MonthKeyboardAdapter end(Date end) {
-        this.end = end;
-        return this;
-    }
-
-    public MonthKeyboardAdapter callbackPrefix(String callbackPrefix) {
-        this.callbackPrefix = callbackPrefix;
-        return this;
-    }
-
-    public MonthKeyboardAdapter datePattern(String datePattern) {
-        this.datePattern = datePattern;
-        return this;
-    }
-
-    public MonthKeyboardAdapter callbackDatePattern(String callBackDatePattern) {
-        this.callBackDatePattern = callBackDatePattern;
-        return this;
     }
 
     private void initialize() {
@@ -83,16 +60,19 @@ public abstract class MonthKeyboardAdapter {
 
     public InlineKeyboardMarkup createKeyboard() {
         initialize();
-        return keyboard.butid();
+        return keyboard.build();
     }
 
-    public boolean processCallback(String callback) {
-        if (callback.startsWith(callbackPrefix)) {
-            onMonthClick();
+    @Override
+    public boolean processCallback(CommandResultHandler handler, Update update) {
+        String callbackQuery = update.getCallbackQuery().getData();
+        if (callbackQuery.startsWith(callbackPrefix)) {
+            String date = callbackQuery.substring(callbackPrefix.length());
+            onMonthClick(date, handler, update);
             return true;
         }
         return false;
     }
 
-    public abstract void onMonthClick();
+    public abstract void onMonthClick(String date, CommandResultHandler handler, Update update);
 }

@@ -7,6 +7,8 @@ import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
 import org.bot.keyboards.CalendarKeyboard;
 import org.bot.keyboards.MonthsKeyboard;
+import org.bot.keyboards.adapter.KeyboardAdapter;
+import org.bot.keyboards.adapter.MonthKeyboardAdapter;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.Message;
@@ -24,6 +26,7 @@ import java.util.List;
 public class DateInfo extends Command {
     private static final AppointmentsManager DATES_MANAGER = AppointmentsManager.getInstance();
     private Message lastBotMessage;
+    private KeyboardAdapter keyboardAdapter;
 
     @Override
     public void process(CommandResultHandler handler, Update update) {
@@ -159,5 +162,28 @@ public class DateInfo extends Command {
         for (AppointmentDate appDate : dateInfo)
             result.append(appDate.toMessageWithType()).append(System.lineSeparator());
         return result.toString();
+    }
+
+    private class DateInfoMonthAdapter extends MonthKeyboardAdapter {
+
+        public DateInfoMonthAdapter(Date begin, Date end) {
+            super(begin, end);
+        }
+
+        @Override
+        public void onMonthClick(String date, CommandResultHandler handler, Update update) {
+            showCalendarKeyboard(date, handler, update);
+        }
+    }
+
+    private class DateInfoCalendarAdapter extends MonthKeyboardAdapter {
+        public DateInfoCalendarAdapter(Date begin, Date end) {
+            super(begin, end);
+        }
+
+        @Override
+        public void onMonthClick(String date, CommandResultHandler handler, Update update) {
+            showCalendarKeyboard(date, handler, update);
+        }
     }
 }

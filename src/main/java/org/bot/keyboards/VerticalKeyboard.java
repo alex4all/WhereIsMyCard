@@ -19,7 +19,7 @@ public class VerticalKeyboard {
         elements.put(text, callback);
     }
 
-    public InlineKeyboardMarkup butid() {
+    public InlineKeyboardMarkup build() {
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> buttonsGreed = new ArrayList<>();
         for (Map.Entry<String, String> element : elements.entrySet()) {
