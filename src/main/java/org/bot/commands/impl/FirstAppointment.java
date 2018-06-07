@@ -1,7 +1,7 @@
 package org.bot.commands.impl;
 
 import org.bot.appointment.AppointmentDate;
-import org.bot.appointment.AppointmentDatesManager;
+import org.bot.appointment.AppointmentsManager;
 import org.bot.commands.BotCommand;
 import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
@@ -13,7 +13,7 @@ import java.util.List;
 
 @BotCommand(name = "first_appointment")
 public class FirstAppointment extends Command {
-    private static final AppointmentDatesManager DATES_MANAGER = AppointmentDatesManager.getInstance();
+    private static final AppointmentsManager DATES_MANAGER = AppointmentsManager.getInstance();
 
     @Override
     public void process(CommandResultHandler handler, Update update) {

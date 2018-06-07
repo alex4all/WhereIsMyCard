@@ -1,4 +1,4 @@
-package org.bot.keyboards;
+package org.bot.keyboards.adapter;
 
 import org.bot.commands.CommandResultHandler;
 

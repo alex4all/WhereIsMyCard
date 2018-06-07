@@ -1,7 +1,7 @@
 package org.bot.commands.impl;
 
 import org.bot.appointment.AppointmentDate;
-import org.bot.appointment.AppointmentDatesManager;
+import org.bot.appointment.AppointmentsManager;
 import org.bot.commands.BotCommand;
 import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
@@ -22,7 +22,7 @@ import java.util.List;
 
 @BotCommand(name = "date_info")
 public class DateInfo extends Command {
-    private static final AppointmentDatesManager DATES_MANAGER = AppointmentDatesManager.getInstance();
+    private static final AppointmentsManager DATES_MANAGER = AppointmentsManager.getInstance();
     private Message lastBotMessage;
 
     @Override
@@ -61,7 +61,7 @@ public class DateInfo extends Command {
     private void showMonthsKeyboard(CommandResultHandler handler, Update update, boolean edit) {
         Calendar calendar = Calendar.getInstance();
         Date begin = calendar.getTime();
-        calendar.add(Calendar.DAY_OF_YEAR, AppointmentDatesManager.DAYS_TO_SCAN);
+        calendar.add(Calendar.DAY_OF_YEAR, AppointmentsManager.DAYS_TO_SCAN);
         Date end = calendar.getTime();
         System.out.println("showMonthsKeyboard in interval: [" + begin.toString() + "; " + end.toString() + "]");
         MonthsKeyboard builder = new MonthsKeyboard().begin(begin).end(end);
@@ -89,7 +89,7 @@ public class DateInfo extends Command {
     private void showCalendarKeyboard(String date, CommandResultHandler handler, Update update) {
         Calendar calendar = Calendar.getInstance();
         Date begin = calendar.getTime();
-        calendar.add(Calendar.DAY_OF_YEAR, AppointmentDatesManager.DAYS_TO_SCAN);
+        calendar.add(Calendar.DAY_OF_YEAR, AppointmentsManager.DAYS_TO_SCAN);
         Date end = calendar.getTime();
         System.out.println("showCalendarKeyboard month: " + date);
         CalendarKeyboard builder = new CalendarKeyboard().begin(begin).end(end);

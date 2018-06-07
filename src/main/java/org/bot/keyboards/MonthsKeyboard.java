@@ -56,11 +56,10 @@ public class MonthsKeyboard {
 
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(begin);
-        Calendar calendarEnd = Calendar.getInstance();
-        calendarEnd.setTime(end);
         SimpleDateFormat textDateFormat = new SimpleDateFormat(datePattern);
         SimpleDateFormat callbackFormat = new SimpleDateFormat(callBackDatePattern);
-
+        System.out.println("Calendar begin: " + calendar.getTime().toString());
+        System.out.println("Calendar end: " + end.toString());
         do {
             String textDate = textDateFormat.format(calendar.getTime());
             String callbackDate = callbackFormat.format(calendar.getTime());
@@ -68,7 +67,7 @@ public class MonthsKeyboard {
             rowInline.add(new InlineKeyboardButton().setText(textDate).setCallbackData(callbackPrefix + callbackDate));
             rowsInline.add(rowInline);
             calendar.add(Calendar.MONTH, 1);
-        } while (DatesCompare.beforeOrSameDay(calendar.getTime(), end));
+        } while (DatesCompare.beforeOrSameMonth(calendar.getTime(), end));
 
         markupInline.setKeyboard(rowsInline);
         return markupInline;

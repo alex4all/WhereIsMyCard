@@ -4,35 +4,27 @@ import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class VerticalKeyboard {
+    private Map<String, String> elements = new LinkedHashMap<>();
 
-    private String callbackPrefix;
-    private List<Object> elements;
-
-    public VerticalKeyboard callbackPrefix(String callbackPrefix) {
-        this.callbackPrefix = callbackPrefix;
-        return this;
+    public void setElements(Map<String, String> elements) {
+        this.elements.putAll(elements);
     }
 
-    public VerticalKeyboard elements(List<Object> elements) {
-        this.elements = elements;
-        return this;
+    public void addElement(String text, String callback) {
+        elements.put(text, callback);
     }
 
-    public VerticalKeyboard elements(Object[] elements) {
-        this.elements = Arrays.asList(elements);
-        return this;
-    }
-
-    public InlineKeyboardMarkup create() {
+    public InlineKeyboardMarkup butid() {
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> buttonsGreed = new ArrayList<>();
-        for (Object element : elements) {
+        for (Map.Entry<String, String> element : elements.entrySet()) {
             List<InlineKeyboardButton> rowInline = new ArrayList<>();
-            rowInline.add(new InlineKeyboardButton().setText(element.toString()).setCallbackData(callbackPrefix + element.toString()));
+            rowInline.add(new InlineKeyboardButton().setText(element.getKey()).setCallbackData(element.getValue()));
             buttonsGreed.add(rowInline);
         }
         markupInline.setKeyboard(buttonsGreed);

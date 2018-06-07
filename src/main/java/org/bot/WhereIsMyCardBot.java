@@ -1,6 +1,6 @@
 package org.bot;
 
-import org.bot.appointment.AppointmentDatesManager;
+import org.bot.appointment.AppointmentsManager;
 import org.bot.commands.Command;
 import org.bot.commands.CommandParseException;
 import org.bot.commands.CommandResultHandler;
@@ -14,7 +14,7 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 public class WhereIsMyCardBot extends TelegramLongPollingBot {
 
-    private final AppointmentDatesManager datesManager;
+    private final AppointmentsManager datesManager;
     private final String botName;
     private final String token;
     private final CommandsManager commandsManager;
@@ -22,7 +22,7 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
     public WhereIsMyCardBot(String botName, String token) {
         this.botName = botName;
         this.token = token;
-        datesManager = AppointmentDatesManager.getInstance();
+        datesManager = AppointmentsManager.getInstance();
         commandsManager = new CommandsManager();
         System.out.println("Bot started");
     }

@@ -1,6 +1,6 @@
 package org.bot.commands.impl;
 
-import org.bot.appointment.AppointmentDatesManager;
+import org.bot.appointment.AppointmentsManager;
 import org.bot.commands.BotCommand;
 import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
@@ -29,7 +29,7 @@ public class CancelAppointment extends Command {
     private void showMonthsKeyboard(CommandResultHandler handler, Update update, boolean edit) {
         Calendar calendar = Calendar.getInstance();
         Date begin = calendar.getTime();
-        calendar.add(Calendar.DAY_OF_YEAR, AppointmentDatesManager.DAYS_TO_SCAN);
+        calendar.add(Calendar.DAY_OF_YEAR, AppointmentsManager.DAYS_TO_SCAN);
         Date end = calendar.getTime();
         System.out.println("showMonthsKeyboard in interval: [" + begin.toString() + "; " + end.toString() + "]");
         MonthsKeyboard builder = new MonthsKeyboard().begin(begin).end(end);

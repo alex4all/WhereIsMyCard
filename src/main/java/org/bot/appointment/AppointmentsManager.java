@@ -12,14 +12,14 @@ import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class AppointmentDatesManager {
+public class AppointmentsManager {
     public static final String DATE_PATTERN = "yyyy-MM-dd";
-    private static final AppointmentDatesManager INSTANCE = new AppointmentDatesManager();
+    private static final AppointmentsManager INSTANCE = new AppointmentsManager();
 
 
     public static final int DAYS_TO_SCAN = 180;
     private static final long UPDATE_PERIOD = 30 * 60 * 1000;
-    private static final long REQUEST_DELAY = 2500;
+    private static final long REQUEST_DELAY = 102500;
     private static final int MAX_AVAILABLE_DATES = 10;
 
     private final Map<AppointmentDate.Type, TreeMap<Long, AppointmentDate>> appointmentCache;
@@ -27,7 +27,7 @@ public class AppointmentDatesManager {
     private final Lock writeLock;
 
 
-    private AppointmentDatesManager() {
+    private AppointmentsManager() {
         appointmentCache = new HashMap<>();
         for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
             appointmentCache.put(type, new TreeMap<>());
@@ -42,7 +42,7 @@ public class AppointmentDatesManager {
         timer.schedule(timerTask, 0, UPDATE_PERIOD);
     }
 
-    public static AppointmentDatesManager getInstance() {
+    public static AppointmentsManager getInstance() {
         return INSTANCE;
     }
 
