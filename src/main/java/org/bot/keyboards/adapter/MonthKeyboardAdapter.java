@@ -74,14 +74,14 @@ public abstract class MonthKeyboardAdapter implements KeyboardAdapter {
     @Override
     public boolean processCallback(CommandResultHandler handler, Update update) {
         String callbackQuery = update.getCallbackQuery().getData();
-        if (callbackQuery.startsWith(MONTH_CLICK_PREFIX)) {
-            String date = callbackQuery.substring(MONTH_CLICK_PREFIX.length());
-            try {
+        try {
+            if (callbackQuery.startsWith(MONTH_CLICK_PREFIX)) {
+                String date = callbackQuery.substring(MONTH_CLICK_PREFIX.length());
                 onMonthClick(callbackFormat.parse(date), handler, update);
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
+                return true;
             }
-            return true;
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
         }
         return false;
     }

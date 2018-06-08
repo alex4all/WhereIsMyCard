@@ -13,6 +13,7 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 public class ServerAPI {
+
     public static AppointmentDate getDateInfo(String date, AppointmentDate.Type type) throws IOException {
         Map<String, String> arguments = new HashMap<>();
         arguments.put("datakolejki", date);

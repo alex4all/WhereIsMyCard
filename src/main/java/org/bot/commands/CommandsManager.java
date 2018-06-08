@@ -3,7 +3,9 @@ package org.bot.commands;
 import org.reflections.Reflections;
 import org.telegram.telegrambots.api.objects.Update;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class CommandsManager {
 

@@ -4,7 +4,6 @@ import org.bot.commands.BotCommand;
 import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
 import org.bot.utils.MessageUtils;
-import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Update;
 
 @BotCommand(name = "help")

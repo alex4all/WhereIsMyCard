@@ -50,11 +50,18 @@ public class AppointmentsManager {
         return getDateInfo(date.getTime());
     }
 
-    public Set<Long> getAnyAvailableDates() {
-        Set<Long> odbior = new HashSet<>(appointmentCache.get(AppointmentDate.Type.ODBIOR).keySet());
-        Set<Long> zlozenie = appointmentCache.get(AppointmentDate.Type.ZLOZENIE).keySet();
-        odbior.retainAll(zlozenie);
-        return odbior;
+    public Set<Long> getAvailableDates(AppointmentDate.Type type) {
+        Set<Long> availableTime = new HashSet<>();
+        readLock.lock();
+        try {
+            TreeMap<Long, AppointmentDate> map = appointmentCache.get(type);
+            for (Entry<Long, AppointmentDate> entry : map.entrySet())
+                if (entry.getValue().isAvailable())
+                    availableTime.add(entry.getKey());
+        } finally {
+            readLock.unlock();
+        }
+        return availableTime;
     }
 
     public List<AppointmentDate> getDateInfo(String date) throws ParseException {

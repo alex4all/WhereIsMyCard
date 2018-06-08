@@ -17,10 +17,10 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
     private static final String DEF_CALLBACK_DATE_PATTERN = "yyyy-MM-dd";
     private static final String DEF_HEADER = "Select day";
 
-    private enum Event {CLICK_NEXT, CLICK_PREV, CLICK_DAY, CLICK_BACK}
+    protected enum Event {CLICK_NEXT, CLICK_PREV, CLICK_DAY, CLICK_BACK}
 
-    private SimpleDateFormat headerFormat = new SimpleDateFormat(DEF_HEADER_PATTERN);
-    private SimpleDateFormat callbackFormat = new SimpleDateFormat(DEF_CALLBACK_DATE_PATTERN);
+    protected SimpleDateFormat headerFormat = new SimpleDateFormat(DEF_HEADER_PATTERN);
+    protected SimpleDateFormat callbackFormat = new SimpleDateFormat(DEF_CALLBACK_DATE_PATTERN);
 
     private Date monthToDisplay;
     private Date begin;
@@ -128,12 +128,9 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
         do {
             // Add days to grid week by week
             List<Button> daysOfWeek = new ArrayList<>(7);
-            //List<InlineKeyboardButton> daysOfWeek = new ArrayList<>(7);
             for (int i = 0; i < 7; i++) {
                 if (calendar.get(Calendar.MONTH) == monthId) {
-                    String dayOfMonth = String.valueOf(calendar.get(Calendar.DAY_OF_MONTH));
-                    String callbackDate = callbackFormat.format(calendar.getTime());
-                    daysOfWeek.add(new Button(dayOfMonth, Event.CLICK_DAY + callbackDate));
+                    daysOfWeek.add(new Button(getDayText(calendar), getDayCallback(calendar)));
                 } else {
                     daysOfWeek.add(new Button(" ", "ignore"));
                 }
@@ -142,6 +139,28 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
             weedDaysGreed.add(daysOfWeek);
         } while (DatesCompare.beforeOrSameDay(calendar.getTime(), lastDayOfLastWeek));
         return weedDaysGreed;
+    }
+
+    /**
+     * Allows to override default behavior and implement different data display strategies
+     *
+     * @param calendar
+     * @return
+     */
+    protected String getDayText(Calendar calendar) {
+        String dayOfMonth = String.valueOf(calendar.get(Calendar.DAY_OF_MONTH));
+        return dayOfMonth;
+    }
+
+    /**
+     * Allows to override default behavior and implement different data display strategies
+     *
+     * @param calendar
+     * @return
+     */
+    protected String getDayCallback(Calendar calendar) {
+        String callbackDate = callbackFormat.format(calendar.getTime());
+        return Event.CLICK_DAY + callbackDate;
     }
 
     private List<Button> createBottomPanel() {
@@ -180,7 +199,6 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
         }
         return bottomPanel;
     }
-
 
     /**
      * Get add days of week in array

@@ -25,6 +25,7 @@ public class DateInfo extends Command {
     private static final String DATE_PATTERN = "yyyy-MM-dd";
 
     private SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_PATTERN);
+
     public DateInfo() {
         Calendar calendar = Calendar.getInstance();
         Date begin = calendar.getTime();
