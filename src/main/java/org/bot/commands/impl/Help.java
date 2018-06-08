@@ -3,6 +3,7 @@ package org.bot.commands.impl;
 import org.bot.commands.BotCommand;
 import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
+import org.bot.utils.MessageUtils;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Update;
 
@@ -11,11 +12,7 @@ public class Help extends Command {
 
     @Override
     public void process(CommandResultHandler handler, Update update) {
-        SendMessage message = new SendMessage();
-        message.enableHtml(true);
-        message.setChatId(update.getMessage().getChatId());
-        message.setText(generateHelpMessage());
-        handler.execute(message);
+        MessageUtils.sendMessage(handler, update, generateHelpMessage());
     }
 
     private String generateHelpMessage() {
@@ -23,7 +20,7 @@ public class Help extends Command {
         builder.append("<b>/first_appointment</b> - get first available appointment date").append(System.lineSeparator());
         builder.append("<b>/date_info</b> - get information about selected date").append(System.lineSeparator());
         builder.append("<b>/link</b> - get Urzad URL").append(System.lineSeparator());
-        builder.append("<b>/github</b> - source code");
+        builder.append("<b>/github</b> - source code").append(System.lineSeparator());
         builder.append("<b>/help</b> - list of available commands");
         return builder.toString();
     }

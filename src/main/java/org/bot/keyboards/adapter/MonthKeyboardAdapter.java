@@ -1,35 +1,43 @@
 package org.bot.keyboards.adapter;
 
 import org.bot.commands.CommandResultHandler;
+import org.bot.keyboards.Button;
 import org.bot.keyboards.VerticalKeyboard;
 import org.bot.utils.DatesCompare;
+import org.bot.utils.MessageUtils;
+import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
-import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.List;
 
 public abstract class MonthKeyboardAdapter implements KeyboardAdapter {
+    /**
+     * hardcoded constants
+     */
+    private static final String DEF_DATE_PATTERN = "LLLL YYYY";
+    private static final String DEF_CALLBACK_DATE_PATTERN = "yyyy-MM-dd";
+    private static final String MONTH_CLICK_PREFIX = "ClickOnMonth_";
+    private static final String DEF_HEADER = "Select day of month";
 
-    public static final String DEF_DATE_PATTERN = "LLLL YYYY";
-    public static final String DEF_CALLBACK_DATE_PATTERN = "yyyy-MM-dd";
-    public static final String MONTH_CLICK_PREFIX = "ClickOnMonth_";
+    private SimpleDateFormat callbackFormat = new SimpleDateFormat(DEF_CALLBACK_DATE_PATTERN);
 
-    private String datePattern = DEF_DATE_PATTERN;
-    private String callBackDatePattern = DEF_CALLBACK_DATE_PATTERN;
-    private String callbackPrefix = MONTH_CLICK_PREFIX;
     private boolean initialized = false;
     private VerticalKeyboard keyboard = new VerticalKeyboard();
 
-    private SimpleDateFormat textDateFormat;
-    private SimpleDateFormat callbackFormat;
-    private Map<String, String> keyboardData = new LinkedHashMap<>();
+    private List<Button> keyboardData = new ArrayList<>();
 
     private Date begin;
     private Date end;
+
+    /**
+     * Keep message with keyboard to be able to edit it
+     */
+    private Message keyboardMessage;
 
     public MonthKeyboardAdapter(Date begin, Date end) {
         this.begin = begin;
@@ -41,43 +49,50 @@ public abstract class MonthKeyboardAdapter implements KeyboardAdapter {
             return;
         if (begin.getTime() > end.getTime())
             throw new RuntimeException("Begin time can't be more than end time");
-        textDateFormat = new SimpleDateFormat(datePattern);
-        callbackFormat = new SimpleDateFormat(callBackDatePattern);
+        SimpleDateFormat textDateFormat = new SimpleDateFormat(DEF_DATE_PATTERN);
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(begin);
         System.out.println("Calendar begin: " + calendar.getTime().toString());
         System.out.println("Calendar end: " + end.toString());
         do {
             String textToDisplay = textDateFormat.format(calendar.getTime());
-            String callback = callbackPrefix + callbackFormat.format(calendar.getTime());
-            keyboardData.put(textToDisplay, callback);
+            String callback = MONTH_CLICK_PREFIX + callbackFormat.format(calendar.getTime());
+            keyboardData.add(new Button(textToDisplay, callback));
             calendar.add(Calendar.MONTH, 1);
         } while (DatesCompare.beforeOrSameMonth(calendar.getTime(), end));
-        keyboard.setElements(keyboardData);
+        keyboard.setButtons(keyboardData);
         initialized = true;
+    }
+
+    public void display(CommandResultHandler handler, Long chatId) {
+        // some sort of caching
+        initialize();
         System.out.println("Months to display: " + keyboardData);
-    }
-
-    public void display(CommandResultHandler handler, Update update) {
-        initialize();
-        return keyboard.build();
-    }
-
-    public void display(CommandResultHandler handler, Update update, String text) {
-        initialize();
-        return keyboard.build();
+        keyboardMessage = MessageUtils.sendOrEdit(keyboardMessage, chatId, DEF_HEADER, keyboard.build(), handler);
     }
 
     @Override
     public boolean processCallback(CommandResultHandler handler, Update update) {
         String callbackQuery = update.getCallbackQuery().getData();
-        if (callbackQuery.startsWith(callbackPrefix)) {
-            String date = callbackQuery.substring(callbackPrefix.length());
-            onMonthClick(date, handler, update);
+        if (callbackQuery.startsWith(MONTH_CLICK_PREFIX)) {
+            String date = callbackQuery.substring(MONTH_CLICK_PREFIX.length());
+            try {
+                onMonthClick(callbackFormat.parse(date), handler, update);
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
             return true;
         }
         return false;
     }
 
-    public abstract void onMonthClick(String date, CommandResultHandler handler, Update update);
+    public abstract void onMonthClick(Date date, CommandResultHandler handler, Update update);
+
+    public void setKeyboardMessage(Message keyboardMessage) {
+        this.keyboardMessage = keyboardMessage;
+    }
+
+    public Message getKeyboardMessage() {
+        return keyboardMessage;
+    }
 }

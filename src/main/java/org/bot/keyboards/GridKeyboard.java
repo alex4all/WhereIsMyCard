@@ -7,21 +7,31 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class VerticalKeyboard {
-    private List<Button> buttons = new LinkedList<>();
+public class GridKeyboard {
+    private List<List<Button>> buttonsGrid = new LinkedList<>();
 
-    public void setButtons(List<Button> buttons) {
-        this.buttons.addAll(buttons);
+    public void addRow(List<Button> buttonsRow) {
+        buttonsGrid.add(buttonsRow);
+    }
+
+    public void addGrid(List<List<Button>> buttonsGrid) {
+        this.buttonsGrid.addAll(buttonsGrid);
+    }
+
+    public void clear() {
+        buttonsGrid.clear();
     }
 
     public InlineKeyboardMarkup build() {
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> buttonsGreed = new ArrayList<>();
-        for (Button button : buttons) {
+        for (List<Button> buttonsRow : buttonsGrid) {
             List<InlineKeyboardButton> rowInline = new ArrayList<>();
-            rowInline.add(new InlineKeyboardButton()
-                    .setText(button.getText())
-                    .setCallbackData(button.getCallback()));
+            for (Button button : buttonsRow) {
+                rowInline.add(new InlineKeyboardButton()
+                        .setText(button.getText())
+                        .setCallbackData(button.getCallback()));
+            }
             buttonsGreed.add(rowInline);
         }
         markupInline.setKeyboard(buttonsGreed);

@@ -3,6 +3,7 @@ package org.bot.commands.impl;
 import org.bot.commands.BotCommand;
 import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
+import org.bot.utils.MessageUtils;
 import org.telegram.telegrambots.api.objects.Update;
 
 @BotCommand(name = "github")
@@ -11,6 +12,6 @@ public class GitHub extends Command {
 
     @Override
     public void process(CommandResultHandler handler, Update update) {
-        sendMessage(handler, update, URL);
+        MessageUtils.sendMessage(handler, update, URL);
     }
 }

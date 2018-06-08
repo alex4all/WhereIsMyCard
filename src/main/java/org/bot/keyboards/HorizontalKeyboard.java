@@ -3,25 +3,25 @@ package org.bot.keyboards;
 import org.telegram.telegrambots.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 public class HorizontalKeyboard {
-    private Map<String, String> elements = new LinkedHashMap<>();
+    private List<Button> buttons = new LinkedList<>();
 
-    public void setElements(Map<String, String> elements) {
-        this.elements.putAll(elements);
-    }
-
-    public void addElement(String text, String callback) {
-        elements.put(text, callback);
+    public void setButtons(List<Button> buttons) {
+        this.buttons.addAll(buttons);
     }
 
     public InlineKeyboardMarkup create() {
         InlineKeyboardMarkup markupInline = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> buttonsGreed = new ArrayList<>();
         List<InlineKeyboardButton> rowInline = new ArrayList<>();
-        for (Map.Entry<String, String> element : elements.entrySet()) {
-            rowInline.add(new InlineKeyboardButton().setText(element.getKey()).setCallbackData(element.getValue()));
+        for (Button button : buttons) {
+            rowInline.add(new InlineKeyboardButton()
+                    .setText(button.getText())
+                    .setCallbackData(button.getCallback()));
         }
         buttonsGreed.add(rowInline);
         markupInline.setKeyboard(buttonsGreed);
