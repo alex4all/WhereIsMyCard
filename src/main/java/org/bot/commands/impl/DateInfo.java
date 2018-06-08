@@ -11,6 +11,7 @@ import org.bot.utils.MessageUtils;
 import org.telegram.telegrambots.api.objects.Update;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -21,7 +22,9 @@ public class DateInfo extends Command {
     private static final AppointmentsManager DATES_MANAGER = AppointmentsManager.getInstance();
     private MonthKeyboardAdapter monthAdapter;
     private CalendarKeyboardAdapter calendarAdapter;
+    private static final String DATE_PATTERN = "yyyy-MM-dd";
 
+    private SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_PATTERN);
     public DateInfo() {
         Calendar calendar = Calendar.getInstance();
         Date begin = calendar.getTime();
@@ -90,7 +93,7 @@ public class DateInfo extends Command {
             try {
                 List<AppointmentDate> result = DATES_MANAGER.getDateInfo(date);
                 Long chatId = update.getCallbackQuery().getMessage().getChatId();
-                String text = dateInfoToString(date.toString(), result);
+                String text = dateInfoToString(dateFormat.format(date), result);
                 lastBotMessage = MessageUtils.sendOrEdit(lastBotMessage, chatId, text, handler);
             } catch (ParseException e) {
                 throw new RuntimeException(e);

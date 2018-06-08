@@ -35,7 +35,15 @@ public class FirstAppointment extends Command {
         AppointmentDate.Type type = AppointmentDate.Type.valueOf(callbackQuery);
         List<AppointmentDate> datesInfo = DATES_MANAGER.getFirstAvailableDates(type, 1);
         String firstAppointment = datesInfoToString(datesInfo);
-        lastBotMessage = MessageUtils.sendOrEdit(lastBotMessage, handler, update, firstAppointment);
+        if (lastBotMessage != null) {
+            if (lastBotMessage.getText().equals(firstAppointment))
+                return;
+            System.out.println("edit message: " + lastBotMessage);
+            MessageUtils.edit(handler, lastBotMessage, firstAppointment);
+        } else {
+            lastBotMessage = MessageUtils.sendMessage(handler, update, firstAppointment);
+            System.out.println("lastBotMessage: " + lastBotMessage);
+        }
     }
 
     private String datesInfoToString(List<AppointmentDate> datesInfo) {

@@ -29,11 +29,13 @@ public class MessageUtils {
     public static Message sendOrEdit(Message lastMessage, Long chatId, String text, CommandResultHandler handler) {
         if (lastMessage == null) {
             SendMessage message = new SendMessage()
+                    .enableHtml(true)
                     .setChatId(chatId)
                     .setText(text);
             return handler.execute(message);
         } else {
             EditMessageText message = new EditMessageText()
+                    .enableHtml(true)
                     .setChatId(chatId)
                     .setText(text)
                     .setMessageId(lastMessage.getMessageId());
@@ -77,6 +79,15 @@ public class MessageUtils {
                 .setChatId(chatId)
                 .setText(text);
         return handler.execute(message);
+    }
+
+    public static void edit(CommandResultHandler handler, Message message, String text) {
+        EditMessageText edit = new EditMessageText()
+                .enableHtml(true)
+                .setChatId(message.getChatId())
+                .setMessageId(message.getMessageId())
+                .setText(text);
+        handler.execute(edit);
     }
 
     public static Message sendMessage(CommandResultHandler handler, Update update, String text, InlineKeyboardMarkup keyboard) {
