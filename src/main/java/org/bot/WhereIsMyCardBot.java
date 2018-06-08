@@ -13,7 +13,7 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 public class WhereIsMyCardBot extends TelegramLongPollingBot {
 
-    // private final AppointmentsManager datesManager;
+    //private final AppointmentsManager datesManager;
     private final String botName;
     private final String token;
     private final CommandsManager commandsManager;

@@ -51,10 +51,48 @@ public class BotStarter {
 
     private static class JedisTimer extends TimerTask {
 
+        //redis://redis3:6379/
         @Override
         public void run() {
             try {
                 Jedis jedis = new Jedis("127.0.0.1", 6379);
+                System.out.println("127.0.0.1");
+                jedis.auth(System.getenv("redis_password"));
+                jedis.setex("test", 100, "Some string");
+                System.out.println(jedis.get("test"));
+                jedis.close();
+                System.out.println("Jedis test complete");
+            } catch (JedisException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                Jedis jedis = new Jedis("redis://redis4", 6379);
+                System.out.println("redis://redis4");
+                jedis.auth(System.getenv("redis_password"));
+                jedis.setex("test", 100, "Some string");
+                System.out.println(jedis.get("test"));
+                jedis.close();
+                System.out.println("Jedis test complete");
+            } catch (JedisException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                Jedis jedis = new Jedis("http://redis4", 6379);
+                System.out.println("http://redis4");
+                jedis.auth(System.getenv("redis_password"));
+                jedis.setex("test", 100, "Some string");
+                System.out.println(jedis.get("test"));
+                jedis.close();
+                System.out.println("Jedis test complete");
+            } catch (JedisException e) {
+                e.printStackTrace();
+            }
+
+            try {
+                Jedis jedis = new Jedis("redis4", 6379);
+                System.out.println("redis4");
                 jedis.auth(System.getenv("redis_password"));
                 jedis.setex("test", 100, "Some string");
                 System.out.println(jedis.get("test"));
