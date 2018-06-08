@@ -3,6 +3,8 @@ package org.bot;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.exceptions.JedisException;
 
 public class BotStarter {
 
@@ -17,7 +19,7 @@ public class BotStarter {
             System.out.println("name: " + botName + "; token: " + token);
         }
 
-        if(botName == null || token == null){
+        if (botName == null || token == null) {
             botName = System.getenv("telegram_bot_name");
             token = System.getenv("telegram_bot_token");
             System.out.println("Take name and token env vars");
@@ -29,6 +31,18 @@ public class BotStarter {
 
         ApiContextInitializer.init();
         TelegramBotsApi botsApi = new TelegramBotsApi();
+        System.out.println("Testing jedis");
+
+        try {
+            Jedis jedis = new Jedis("127.0.0.1", 6379);
+            jedis.auth(System.getenv("redis_password"));
+            jedis.setex("test", 100, "Some string");
+            System.out.println(jedis.get("test"));
+            jedis.close();
+            System.out.println("Jedis test complete");
+        } catch (JedisException e) {
+            e.printStackTrace();
+        }
 
         try {
             System.out.println("Starting bot");
