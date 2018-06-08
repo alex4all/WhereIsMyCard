@@ -58,7 +58,12 @@ public abstract class MonthKeyboardAdapter implements KeyboardAdapter {
         System.out.println("Months to display: " + keyboardData);
     }
 
-    public InlineKeyboardMarkup createKeyboard() {
+    public void display(CommandResultHandler handler, Update update) {
+        initialize();
+        return keyboard.build();
+    }
+
+    public void display(CommandResultHandler handler, Update update, String text) {
         initialize();
         return keyboard.build();
     }

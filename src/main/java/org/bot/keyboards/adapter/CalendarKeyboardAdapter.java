@@ -1,6 +1,7 @@
 package org.bot.keyboards.adapter;
 
 import org.bot.commands.CommandResultHandler;
+import org.bot.keyboards.CalendarKeyboard;
 import org.telegram.telegrambots.api.objects.Update;
 
 import java.util.Date;
@@ -35,8 +36,25 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
 
     @Override
     public boolean processCallback(CommandResultHandler handler, Update update) {
+        String callbackQuery = update.getCallbackQuery().getData();
+        if (callbackQuery.startsWith(CalendarKeyboard.NEXT_CLICK_PREFIX)) {
+            String date = callbackQuery.substring(CalendarKeyboard.NEXT_CLICK_PREFIX.length());
+            showCalendarKeyboard(date, handler, update);
+        }
+        else if (callbackQuery.startsWith(CalendarKeyboard.PREVIOUS_CLICK)) {
+            String date = callbackQuery.substring(CalendarKeyboard.PREVIOUS_CLICK.length());
+            showCalendarKeyboard(date, handler, update);
+        } else else if (callbackQuery.startsWith(CalendarKeyboard.DAY_CLICK_PREFIX)) {
+            showDayInfo(handler, update);
+        } else if (callbackQuery.equals(CalendarKeyboard.BACK_CLICK_PREFIX)) {
+            showMonthsKeyboard(handler, update, true);
+        }
         return false;
     }
+
+    public abstract void onNextDayClick(String nextDate, CommandResultHandler handler, Update update);
+
+    public abstract void onPreviousDayClick(String previousDate, CommandResultHandler handler, Update update);
 
     public abstract void onDayClick(String date, CommandResultHandler handler, Update update);
 
