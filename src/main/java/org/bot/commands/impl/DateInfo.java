@@ -57,15 +57,16 @@ public class DateInfo extends Command {
         }
 
         if (verifiedDates.size() == 0) {
-            StringBuilder result = new StringBuilder();
-            result.append("<b>").append(date).append(":</b>").append("No data found");
-            return result.toString();
+            return new StringBuilder()
+                    .append("<b>").append(date).append(":</b>")
+                    .append("No data found").toString();
         }
 
         StringBuilder result = new StringBuilder();
         result.append("<b>").append(date).append(":</b>").append(System.lineSeparator());
 
         for (AppointmentDate appDate : dateInfo)
+            if(appDate!= null)
             result.append(appDate.toMessageWithType()).append(System.lineSeparator());
         return result.toString();
     }

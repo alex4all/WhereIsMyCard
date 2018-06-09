@@ -1,5 +1,8 @@
 package org.bot.appointment;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class AppointmentDate {
     public enum Type {ODBIOR, ZLOZENIE}
 
@@ -12,6 +15,7 @@ public class AppointmentDate {
     public AppointmentDate(Type type, String date, String availableTime) {
         this.type = type;
         this.date = date;
+        this.updatedAt = System.currentTimeMillis();
         if (availableTime.startsWith("brak")) {
             this.availableTime = "No available time";
             available = false;
@@ -19,10 +23,30 @@ public class AppointmentDate {
             this.availableTime = availableTime;
     }
 
+    public AppointmentDate(Map<String, String> map)
+    {
+        System.out.println(map);
+        type = Type.valueOf(map.get("type"));
+        date = map.get("date");
+        availableTime = map.get("availableTime");
+        updatedAt = Long.parseLong(map.get("updatedAt"));
+        available = Boolean.parseBoolean(map.get("available"));
+    }
+
     public void update(AppointmentDate newDate) {
         this.availableTime = newDate.availableTime;
         this.updatedAt = newDate.updatedAt;
         this.available = newDate.available;
+    }
+
+    public Map<String, String> getAsMap() {
+        Map<String, String> map = new HashMap<>();
+        map.put("type", type.name());
+        map.put("date", date);
+        map.put("availableTime", availableTime);
+        map.put("updatedAt", String.valueOf(updatedAt));
+        map.put("available", String.valueOf(available));
+        return map;
     }
 
     public boolean isAvailable() {
