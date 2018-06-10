@@ -17,12 +17,11 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class AppointmentsManager {
-    public static final String DATE_PATTERN = "yyyy-MM-dd";
+    private static final String DATE_PATTERN = "yyyy-MM-dd";
     private static final AppointmentsManager INSTANCE = new AppointmentsManager();
 
-
     public static final int DAYS_TO_SCAN = 180;
-    private static final long UPDATE_PERIOD = 30 * 60 * 1000;
+    private static final long UPDATE_PERIOD = 20 * 60 * 1000;
     private static final long REQUEST_DELAY = 2500;
     private static final int MAX_AVAILABLE_DATES = 10;
     private static final int EXPIRATION_TIME_SEC = 60 * 60;
@@ -31,7 +30,6 @@ public class AppointmentsManager {
     private final Lock readLock;
     private final Lock writeLock;
     private final JedisCache jedisCache = JedisCache.getInstance();
-
 
     private AppointmentsManager() {
         appointmentCache = new HashMap<>();
@@ -46,10 +44,11 @@ public class AppointmentsManager {
 
         Timer timer = new Timer(true);
         TimerTask timerTask = new UpdateTask(DAYS_TO_SCAN);
-        timer.schedule(timerTask, 0, UPDATE_PERIOD);
+        timer.schedule(timerTask, 0, 60 * 1000);
     }
 
     private void preloadDataFromRedis() {
+        System.out.println("Preload data from redis started");
         SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_PATTERN);
         Calendar calendar = Calendar.getInstance();
         try (Jedis jedis = jedisCache.getConnection()) {
@@ -60,21 +59,19 @@ public class AppointmentsManager {
                     StringBuilder key = new StringBuilder("AppointmentDate")
                             .append(".").append(type.name())
                             .append(".").append(date);
-                    //System.out.println("preload " + key);
                     pipe.hgetAll(key.toString());
                 }
                 calendar.add(Calendar.DAY_OF_YEAR, 1);
             }
             List<Object> result = pipe.syncAndReturnAll();
-            for(Object object: result)
-            {
+            for (Object object : result) {
                 Map<String, String> map = (Map<String, String>) object;
-                if(map.isEmpty())
+                if (map.isEmpty())
                     continue;
                 AppointmentDate date = new AppointmentDate(map);
                 System.out.println("preloaded date: " + date.toString());
                 try {
-                    cacheNewDate(date, dateFormat);
+                    cacheLocal(date, dateFormat);
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
@@ -82,6 +79,7 @@ public class AppointmentsManager {
         } catch (JedisException e) {
             e.printStackTrace();
         }
+        System.out.println("Preload complete");
     }
 
     public static AppointmentsManager getInstance() {
@@ -90,24 +88,6 @@ public class AppointmentsManager {
 
     public List<AppointmentDate> getDateInfo(Date date) throws ParseException {
         return getDateInfo(date.getTime());
-    }
-
-    public Set<Long> getAvailableDates(AppointmentDate.Type type) {
-        Set<Long> availableTime = new HashSet<>();
-        readLock.lock();
-        try {
-            TreeMap<Long, AppointmentDate> map = appointmentCache.get(type);
-            for (Entry<Long, AppointmentDate> entry : map.entrySet())
-                if (entry.getValue().isAvailable())
-                    availableTime.add(entry.getKey());
-        } finally {
-            readLock.unlock();
-        }
-        return availableTime;
-    }
-
-    public List<AppointmentDate> getDateInfo(String date) throws ParseException {
-        return getDateInfo(Utils.dateToMills(date, new SimpleDateFormat(DATE_PATTERN)));
     }
 
     public List<AppointmentDate> getDateInfo(long dateAsMills) throws ParseException {
@@ -149,33 +129,38 @@ public class AppointmentsManager {
     }
 
     /**
-     * Update data in cache. This is the only thread which performs write operations with cache. Don't need to do read lock here
+     * Update data in local cache.
      *
-     * @param newDate
+     * @param updatedDateInfo updated information about date
      * @throws ParseException
      */
-    private void cacheNewDate(AppointmentDate newDate, DateFormat dateFormat) throws ParseException {
-        System.out.println("Data updated: " + newDate.toString());
-        Long newDateAsMills = Utils.dateToMills(newDate.getDate(), dateFormat);
-        AppointmentDate.Type newType = newDate.getType();
-
-        AppointmentDate oldDate = appointmentCache.get(newType).get(newDateAsMills);
-        if (oldDate != null) {
-            oldDate.update(newDate);
-            return;
+    private void cacheLocal(AppointmentDate updatedDateInfo, DateFormat dateFormat) throws ParseException {
+        Long dateKey = Utils.dateToMills(updatedDateInfo.getDate(), dateFormat);
+        AppointmentDate.Type type = updatedDateInfo.getType();
+        readLock.lock();
+        try {
+            AppointmentDate oldDate = appointmentCache.get(type).get(dateKey);
+            if (oldDate != null) {
+                oldDate.update(updatedDateInfo);
+                return;
+            }
+        } finally {
+            readLock.unlock();
         }
         writeLock.lock();
         try {
-            appointmentCache.get(newType).put(newDateAsMills, newDate);
+            appointmentCache.get(type).put(dateKey, updatedDateInfo);
         } finally {
             writeLock.unlock();
         }
+    }
 
+    private void cacheRemote(AppointmentDate appointmentDate) {
         String key = new StringBuilder("AppointmentDate")
-                .append(".").append(newDate.getType().name())
-                .append(".").append(newDate.getDate()).toString();
+                .append(".").append(appointmentDate.getType().name())
+                .append(".").append(appointmentDate.getDate()).toString();
         try (Jedis jedis = jedisCache.getConnection()) {
-            jedis.hmset(key, newDate.getAsMap());
+            jedis.hmset(key, appointmentDate.getAsMap());
             jedis.expire(key, EXPIRATION_TIME_SEC);
         } catch (JedisException e) {
             e.printStackTrace();
@@ -196,7 +181,33 @@ public class AppointmentsManager {
 
         @Override
         public void run() {
+            boolean doScan = false;
+            System.out.println("UpdateTask checks data cached locally");
+            for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
+                TreeMap<Long, AppointmentDate> map = appointmentCache.get(type);
+                if (map.size() < daysToScan) {
+                    System.out.println(type.name() + " appointment info is not full: " + map.size());
+                    doScan = true;
+                    continue;
+                }
+
+                Entry<Long, AppointmentDate> entry = map.firstEntry();
+                long updatedAt = entry.getValue().getUpdatedAt();
+                long dataKeepTime = System.currentTimeMillis() - updatedAt;
+                long dataKeepTimeMin = dataKeepTime / (1000 * 60);
+                System.out.println("Data updated " + dataKeepTimeMin + " min ago");
+                if (dataKeepTime > UPDATE_PERIOD)
+                    doScan = true;
+            }
+            if (doScan)
+                updateAppointmentDates();
+            removeOldDatesFromCache(dateFormat);
+        }
+
+        private void updateAppointmentDates() {
             Calendar calendar = Calendar.getInstance();
+            long startScan = System.currentTimeMillis();
+            System.out.println("Start scan");
             for (int i = 0; i < daysToScan; i++) {
                 String date = dateFormat.format(calendar.getTime());
                 for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
@@ -204,7 +215,9 @@ public class AppointmentsManager {
                         long updatedAt = System.currentTimeMillis();
                         AppointmentDate appointmentDate = ServerAPI.getDateInfo(date, type);
                         appointmentDate.setUpdatedAt(updatedAt);
-                        cacheNewDate(appointmentDate, dateFormat);
+                        System.out.println("Updated: " + appointmentDate.toString());
+                        cacheLocal(appointmentDate, dateFormat);
+                        cacheRemote(appointmentDate);
                     } catch (IOException e) {
                         System.out.println("Exception occurred while sending request to urzad : " + e.getMessage());
                         e.printStackTrace();
@@ -220,16 +233,16 @@ public class AppointmentsManager {
                         e.printStackTrace();
                     }
                 }
-
                 calendar.add(Calendar.DAY_OF_YEAR, 1);
             }
-            removeOldDatesFromCache();
+            long scanTime = System.currentTimeMillis() - startScan;
+            System.out.println("Scan complete. Time taken: " + scanTime);
         }
 
         /**
          * Remove expired information from cache. This is the only thread which performs write operations with cache. Don't need to do read lock here
          */
-        private void removeOldDatesFromCache() {
+        private void removeOldDatesFromCache(DateFormat dateFormat) {
             long currentTime = System.currentTimeMillis();
             String currentDate = Utils.millsToDate(currentTime, dateFormat);
 
