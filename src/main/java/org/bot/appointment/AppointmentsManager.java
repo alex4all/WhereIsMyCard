@@ -1,5 +1,7 @@
 package org.bot.appointment;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bot.cache.JedisCache;
 import org.bot.net.ServerAPI;
 import org.bot.utils.Utils;
@@ -17,6 +19,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class AppointmentsManager {
+    private static final Logger log = LogManager.getLogger(AppointmentsManager.class);
     private static final String DATE_PATTERN = "yyyy-MM-dd";
     private static final AppointmentsManager INSTANCE = new AppointmentsManager();
 
@@ -48,7 +51,7 @@ public class AppointmentsManager {
     }
 
     private void preloadDataFromRedis() {
-        System.out.println("Preload data from redis started");
+        log.info("Preloading data from redis");
         SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_PATTERN);
         Calendar calendar = Calendar.getInstance();
         try (Jedis jedis = jedisCache.getConnection()) {
@@ -69,7 +72,7 @@ public class AppointmentsManager {
                 if (map.isEmpty())
                     continue;
                 AppointmentDate date = new AppointmentDate(map);
-                System.out.println("preloaded date: " + date.toString());
+                log.info("Preloaded date: " + date.toString());
                 try {
                     cacheLocal(date, dateFormat);
                 } catch (ParseException e) {
@@ -79,7 +82,7 @@ public class AppointmentsManager {
         } catch (JedisException e) {
             e.printStackTrace();
         }
-        System.out.println("Preload complete");
+        log.info("Preload complete");
     }
 
     public static AppointmentsManager getInstance() {

@@ -1,5 +1,7 @@
 package org.bot;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bot.appointment.AppointmentsManager;
 import org.bot.commands.Command;
 import org.bot.commands.CommandParseException;
@@ -13,7 +15,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 public class WhereIsMyCardBot extends TelegramLongPollingBot {
-
+    private static final Logger log = LogManager.getLogger(WhereIsMyCardBot.class);
     private final AppointmentsManager datesManager;
     private final String botName;
     private final String token;
@@ -34,10 +36,10 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
+        log.info("onUpdateReceived: " + update.toString());
         // process message
         if (update.hasMessage() && update.getMessage().hasText()) {
             String message = update.getMessage().getText();
-            System.out.println("Update received: " + message);
             if (isCommand(message)) {
                 try {
                     Command command = commandsManager.createCommand(update);
@@ -59,7 +61,7 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
 
         // process callback query
         if (update.hasCallbackQuery()) {
-            System.out.println("Callback: " + update.getCallbackQuery().getData());
+            log.info("Callback: " + update.getCallbackQuery().getData());
             Command command = CommandsHistory.getInstance().getCommand(UpdateToID.callbackQuery(update));
             if (command != null /*&& command.getUserId() == update.getCallbackQuery().getFrom().getId()*/) {
                 command.processCallbackQuery(new CommandResultHandler(this), update);

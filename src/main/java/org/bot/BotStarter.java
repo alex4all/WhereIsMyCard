@@ -1,10 +1,13 @@
 package org.bot;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 public class BotStarter {
+    private static final Logger log = LogManager.getLogger(BotStarter.class);
 
     public static void main(String[] args) {
         String botName = null;
@@ -13,15 +16,15 @@ public class BotStarter {
         if (args != null && args.length > 1) {
             botName = args[0];
             token = args[1];
-            System.out.println("Take name and token from args");
-            System.out.println("name: " + botName + "; token: " + token);
+            log.info("Take name and token from args");
+            log.info("name: " + botName + "; token: " + token);
         }
 
         if (botName == null || token == null) {
             botName = System.getenv("telegram_bot_name");
             token = System.getenv("telegram_bot_token");
-            System.out.println("Take name and token env vars");
-            System.out.println("name: " + botName + "; token: " + token);
+            log.info("Take name and token env vars");
+            log.info("name: " + botName + "; token: " + token);
         }
 
         if (botName == null || token == null)
@@ -31,7 +34,7 @@ public class BotStarter {
         TelegramBotsApi botsApi = new TelegramBotsApi();
 
         try {
-            System.out.println("Starting bot");
+            log.info("Starting bot");
             botsApi.registerBot(new WhereIsMyCardBot(botName, token));
         } catch (TelegramApiException e) {
             e.printStackTrace();
