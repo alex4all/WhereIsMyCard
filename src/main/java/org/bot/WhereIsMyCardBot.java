@@ -10,9 +10,12 @@ import org.bot.commands.CommandsManager;
 import org.bot.utils.CommandsHistory;
 import org.bot.utils.UpdateToID;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
+import org.telegram.telegrambots.api.objects.Location;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
+
+import java.util.Locale;
 
 public class WhereIsMyCardBot extends TelegramLongPollingBot {
     private static final Logger log = LogManager.getLogger(WhereIsMyCardBot.class);

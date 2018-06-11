@@ -1,9 +1,11 @@
 package org.bot.commands;
 
+import org.bot.AppData;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 
 public abstract class Command {
+    private static AppData appData = AppData.getInstance();
     protected int userId;
     protected Message lastBotMessage;
     protected boolean awaitUserInput = false;
@@ -30,6 +32,10 @@ public abstract class Command {
     }
 
     public void processUserInput(CommandResultHandler handler, Update update) {
+    }
+
+    protected String getResource(String resource) {
+        return appData.getMessage(resource);
     }
 
     public Long getChatId(Update update) {
