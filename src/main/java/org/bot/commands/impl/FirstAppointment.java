@@ -9,7 +9,6 @@ import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
 import org.bot.keyboards.Button;
 import org.bot.keyboards.HorizontalKeyboard;
-import org.bot.utils.MessageUtils;
 import org.telegram.telegrambots.api.objects.Update;
 
 import java.util.ArrayList;
@@ -21,8 +20,12 @@ public class FirstAppointment extends Command {
     private static final AppointmentsManager DATES_MANAGER = AppointmentsManager.getInstance();
     private static final String SELECT_MESSAGE = "Select appointment type";
 
+    public FirstAppointment(CommandResultHandler handler, Update update) {
+        super(handler, update);
+    }
+
     @Override
-    public void process(CommandResultHandler handler, Update update) {
+    public void process(Update update) {
         List<Button> buttons = new ArrayList<>(AppointmentDate.Type.values().length);
         for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
             buttons.add(new Button(type.name(), type.name()));
@@ -30,23 +33,16 @@ public class FirstAppointment extends Command {
         HorizontalKeyboard keyboard = new HorizontalKeyboard();
         keyboard.setButtons(buttons);
         log.info("Send new keyboard");
-        MessageUtils.sendMessage(handler, update, SELECT_MESSAGE, keyboard.create());
+        showKeyboard(SELECT_MESSAGE, keyboard.create());
     }
 
-    public void processCallbackQuery(CommandResultHandler handler, Update update) {
+    @Override
+    public void processCallbackQuery(Update update) {
         String callbackQuery = update.getCallbackQuery().getData();
         AppointmentDate.Type type = AppointmentDate.Type.valueOf(callbackQuery);
         List<AppointmentDate> datesInfo = DATES_MANAGER.getFirstAvailableDates(type, 1);
         String firstAppointment = datesInfoToString(datesInfo);
-        if (lastBotMessage != null) {
-            if (lastBotMessage.getText().equals(firstAppointment))
-                return;
-            log.info("edit message: " + lastBotMessage);
-            MessageUtils.edit(handler, lastBotMessage, firstAppointment);
-        } else {
-            lastBotMessage = MessageUtils.sendMessage(handler, update, firstAppointment);
-            log.info("lastBotMessage: " + lastBotMessage);
-        }
+        sendOrEditLast(firstAppointment);
     }
 
     private String datesInfoToString(List<AppointmentDate> datesInfo) {

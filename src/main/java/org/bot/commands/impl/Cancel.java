@@ -7,8 +7,14 @@ import org.telegram.telegrambots.api.objects.Update;
 
 @BotCommand(name = "cancel")
 public class Cancel extends Command {
+
+
+    public Cancel(CommandResultHandler handler, Update update) {
+        super(handler, update);
+    }
+
     @Override
-    public void process(CommandResultHandler handler, Update update) {
+    public void process(Update update) {
 
     }
 }

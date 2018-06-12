@@ -1,5 +1,7 @@
 package org.bot.keyboards.adapter;
 
+import org.bot.commands.Command;
+
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Set;
@@ -34,6 +36,6 @@ public abstract class ExcludingCalendarAdapter extends CalendarKeyboardAdapter {
     protected String getDayCallback(Calendar calendar) {
         if (availableDays.contains(calendar.get(Calendar.DAY_OF_YEAR)))
             return Event.CLICK_DAY + callbackFormat.format(calendar.getTime());
-        return "ignore";
+        return Command.IGNORE_QUERY;
     }
 }

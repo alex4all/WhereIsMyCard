@@ -5,12 +5,12 @@ import org.bot.appointment.AppointmentsManager;
 import org.bot.commands.BotCommand;
 import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
+import org.bot.commands.Context;
 import org.bot.keyboards.adapter.CalendarKeyboardAdapter;
 import org.bot.keyboards.adapter.MonthKeyboardAdapter;
-import org.bot.utils.MessageUtils;
+import org.telegram.telegrambots.api.objects.CallbackQuery;
 import org.telegram.telegrambots.api.objects.Update;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -26,26 +26,26 @@ public class DateInfo extends Command {
 
     private SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_PATTERN);
 
-    public DateInfo() {
+    public DateInfo(CommandResultHandler handler, Update update) {
+        super(handler, update);
         Calendar calendar = Calendar.getInstance();
         Date begin = calendar.getTime();
         calendar.add(Calendar.DAY_OF_YEAR, AppointmentsManager.DAYS_TO_SCAN);
         Date end = calendar.getTime();
         monthAdapter = new DateInfoMonthAdapter(begin, end);
         calendarAdapter = new DateInfoCalendarAdapter(begin, end);
-
     }
 
     @Override
-    public void process(CommandResultHandler handler, Update update) {
-        monthAdapter.display(handler, update.getMessage().getChatId());
+    public void process(Update update) {
+        monthAdapter.display(this);
     }
 
     @Override
-    public void processCallbackQuery(CommandResultHandler handler, Update update) {
-        if (monthAdapter.processCallback(handler, update))
+    public void processCallbackQuery(Update update) {
+        if (monthAdapter.processCallback(this, update))
             return;
-        calendarAdapter.processCallback(handler, update);
+        calendarAdapter.processCallback(this, update);
     }
 
     private String dateInfoToString(String date, List<AppointmentDate> dateInfo) {
@@ -66,8 +66,8 @@ public class DateInfo extends Command {
         result.append("<b>").append(date).append(":</b>").append(System.lineSeparator());
 
         for (AppointmentDate appDate : dateInfo)
-            if(appDate!= null)
-            result.append(appDate.toMessageWithType()).append(System.lineSeparator());
+            if (appDate != null)
+                result.append(appDate.toMessageWithType()).append(System.lineSeparator());
         return result.toString();
     }
 
@@ -78,10 +78,8 @@ public class DateInfo extends Command {
         }
 
         @Override
-        public void onMonthClick(Date date, CommandResultHandler handler, Update update) {
-            // share message with keyboard to edit it
-            calendarAdapter.setKeyboardMessage(getKeyboardMessage());
-            calendarAdapter.display(date, handler, update.getCallbackQuery().getMessage().getChatId());
+        public void onMonthClick(Date date, Context context, Update update) {
+            calendarAdapter.display(date, context);
         }
     }
 
@@ -91,22 +89,17 @@ public class DateInfo extends Command {
         }
 
         @Override
-        public void onDayClick(Date date, CommandResultHandler handler, Update update) {
-            try {
-                List<AppointmentDate> result = DATES_MANAGER.getDateInfo(date);
-                Long chatId = update.getCallbackQuery().getMessage().getChatId();
-                String text = dateInfoToString(dateFormat.format(date), result);
-                lastBotMessage = MessageUtils.sendOrEdit(lastBotMessage, chatId, text, handler);
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
-            }
+        public void onDayClick(Date date, Context context, CallbackQuery query) {
+            List<AppointmentDate> result = DATES_MANAGER.getDateInfo(date);
+            String text = dateInfoToString(dateFormat.format(date), result);
+            context.sendOrEditLast(text);
+            context.ignoreCallback(query);
         }
 
         @Override
-        public void onBackClick(CommandResultHandler handler, Update update) {
-            // share message with keyboard to edit it
-            monthAdapter.setKeyboardMessage(getKeyboardMessage());
-            monthAdapter.display(handler, update.getCallbackQuery().getMessage().getChatId());
+        public void onBackClick(Context context, CallbackQuery query) {
+            monthAdapter.display(context);
+            context.ignoreCallback(query);
         }
     }
 }

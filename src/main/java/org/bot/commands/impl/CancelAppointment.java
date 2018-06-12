@@ -8,13 +8,18 @@ import org.telegram.telegrambots.api.objects.Update;
 @BotCommand(name = "cancel_appointment")
 public class CancelAppointment extends Command {
 
+
+    public CancelAppointment(CommandResultHandler handler, Update update) {
+        super(handler, update);
+    }
+
     @Override
-    public void process(CommandResultHandler handler, Update update) {
+    public void process(Update update) {
 
     }
 
     @Override
-    public void processCallbackQuery(CommandResultHandler handler, Update update) {
+    public void processCallbackQuery(Update update) {
 
     }
 }

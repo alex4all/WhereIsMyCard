@@ -3,15 +3,18 @@ package org.bot.commands.impl;
 import org.bot.commands.BotCommand;
 import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
-import org.bot.utils.MessageUtils;
 import org.telegram.telegrambots.api.objects.Update;
 
 @BotCommand(name = "help")
 public class Help extends Command {
 
+    public Help(CommandResultHandler handler, Update update) {
+        super(handler, update);
+    }
+
     @Override
-    public void process(CommandResultHandler handler, Update update) {
-        MessageUtils.sendMessage(handler, update, generateHelpMessage());
+    public void process(Update update) {
+        sendMessage(generateHelpMessage());
     }
 
     private String generateHelpMessage() {

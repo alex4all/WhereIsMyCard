@@ -4,18 +4,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bot.appointment.AppointmentsManager;
 import org.bot.commands.Command;
-import org.bot.commands.CommandParseException;
 import org.bot.commands.CommandResultHandler;
 import org.bot.commands.CommandsManager;
+import org.bot.commands.UnknownCommandException;
 import org.bot.utils.CommandsHistory;
 import org.bot.utils.UpdateToID;
+import org.telegram.telegrambots.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
-import org.telegram.telegrambots.api.objects.Location;
+import org.telegram.telegrambots.api.objects.CallbackQuery;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
-
-import java.util.Locale;
 
 public class WhereIsMyCardBot extends TelegramLongPollingBot {
     private static final Logger log = LogManager.getLogger(WhereIsMyCardBot.class);
@@ -39,35 +38,37 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        log.info("onUpdateReceived: " + update.toString());
+        log.debug("onUpdateReceived: " + update.toString());
         // process message
         if (update.hasMessage() && update.getMessage().hasText()) {
             String message = update.getMessage().getText();
             if (isCommand(message)) {
                 try {
-                    Command command = commandsManager.createCommand(update);
+                    Command command = commandsManager.createCommand(new CommandResultHandler(this), update);
                     CommandsHistory.getInstance().putCommand(UpdateToID.message(update), command);
-                    command.setUserId(update.getMessage().getFrom().getId());
-                    command.process(new CommandResultHandler(this), update);
+                    command.process(update);
                     return;
-                } catch (CommandParseException e) {
-                    e.printStackTrace();
+                } catch (UnknownCommandException e) {
+                    log.error("Command not found: " + e.getCommandName(), e);
                     sendError(e.getMessage(), update.getMessage().getChatId());
                 }
             }
 
             Command command = CommandsHistory.getInstance().getCommand(UpdateToID.message(update));
             if (command != null && command.isAwaitUserInput()) {
-                command.processUserInput(new CommandResultHandler(this), update);
+                command.processUserInput(update);
             }
         }
 
         // process callback query
         if (update.hasCallbackQuery()) {
+            CallbackQuery callbackquery = update.getCallbackQuery();
+            if (Command.IGNORE_QUERY.equals(callbackquery.getData()))
+                ignoreQuery(callbackquery);
             log.info("Callback: " + update.getCallbackQuery().getData());
             Command command = CommandsHistory.getInstance().getCommand(UpdateToID.callbackQuery(update));
             if (command != null /*&& command.getUserId() == update.getCallbackQuery().getFrom().getId()*/) {
-                command.processCallbackQuery(new CommandResultHandler(this), update);
+                command.processCallbackQuery(update);
             }
 //            else {
 //                String name = update.getCallbackQuery().getFrom().getFirstName();
@@ -75,6 +76,16 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
 //                        "Try to process it one more time";
 //                sendError(message, update.getCallbackQuery().getMessage().getChatId());
 //            }
+        }
+    }
+
+    public void ignoreQuery(CallbackQuery callbackquery) {
+        AnswerCallbackQuery answerCallbackQuery = new AnswerCallbackQuery();
+        answerCallbackQuery.setCallbackQueryId(callbackquery.getId());
+        try {
+            execute(answerCallbackQuery);
+        } catch (TelegramApiException e) {
+            log.error("Exception occurred in ignoreQuery method call", e);
         }
     }
 
@@ -86,7 +97,7 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            log.error("Can't send error message", e);
         }
     }
 

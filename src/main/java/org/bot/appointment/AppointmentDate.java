@@ -9,8 +9,8 @@ import java.util.Map;
 public class AppointmentDate {
     private static final Logger log = LogManager.getLogger(AppointmentDate.class);
     private static final String NEGATIVE_RESULT = "brak";
-    public enum Type {ODBIOR, ZLOZENIE}
 
+    public enum Type {ODBIOR, ZLOZENIE}
 
     private Type type;
     private String date;
@@ -29,8 +29,7 @@ public class AppointmentDate {
             this.availableTime = availableTime;
     }
 
-    public AppointmentDate(Map<String, String> map)
-    {
+    public AppointmentDate(Map<String, String> map) {
         log.info(map);
         type = Type.valueOf(map.get("type"));
         date = map.get("date");
@@ -57,10 +56,6 @@ public class AppointmentDate {
 
     public boolean isAvailable() {
         return available;
-    }
-
-    public void setAvailable(boolean available) {
-        this.available = available;
     }
 
     public String getDate() {
@@ -91,16 +86,8 @@ public class AppointmentDate {
         return availableTime;
     }
 
-    public void setAvailableTime(String availableTime) {
-        this.availableTime = availableTime;
-    }
-
     public Type getType() {
         return type;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
     }
 
     public String toString() {

@@ -2,14 +2,15 @@ package org.bot.keyboards.adapter;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.bot.commands.CommandResultHandler;
+import org.bot.commands.Command;
+import org.bot.commands.Context;
 import org.bot.keyboards.Button;
 import org.bot.keyboards.GridKeyboard;
 import org.bot.utils.DatesCompare;
-import org.bot.utils.MessageUtils;
-import org.telegram.telegrambots.api.objects.Message;
+import org.telegram.telegrambots.api.objects.CallbackQuery;
 import org.telegram.telegrambots.api.objects.Update;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -18,11 +19,9 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
     private static final String DEF_HEADER_PATTERN = "LLLL YYYY";
     private static final String DEF_DAY_OF_WEEK_PATTERN = "EE";
     private static final String DEF_CALLBACK_DATE_PATTERN = "yyyy-MM-dd";
-    private static final String DEF_HEADER = "Select day";
 
-    protected enum Event {CLICK_NEXT, CLICK_PREV, CLICK_DAY, CLICK_BACK}
+    protected enum Event {CLICK_NEXT, CLICK_PREV, CLICK_DAY, CLICK_BACK, CLICK_OUT_OF_RANGE}
 
-    protected SimpleDateFormat headerFormat = new SimpleDateFormat(DEF_HEADER_PATTERN);
     protected SimpleDateFormat callbackFormat = new SimpleDateFormat(DEF_CALLBACK_DATE_PATTERN);
 
     private Date monthToDisplay;
@@ -30,7 +29,6 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
     private Date end;
     private String[] daysOfWeek;
     private GridKeyboard keyboard;
-    private Message keyboardMessage;
 
     public CalendarKeyboardAdapter(Date begin, Date end) {
         this.begin = begin;
@@ -39,69 +37,82 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
     }
 
     @Override
-    public boolean processCallback(CommandResultHandler handler, Update update) {
-        String callbackQuery = update.getCallbackQuery().getData();
+    public boolean processCallback(Context context, Update update) {
+        CallbackQuery callbackQuery = update.getCallbackQuery();
+        String queryText = callbackQuery.getData();
         try {
-            if (callbackQuery.startsWith(Event.CLICK_NEXT.name())) {
-                String nextDate = callbackQuery.substring(Event.CLICK_NEXT.name().length());
-                onNextDayClick(callbackFormat.parse(nextDate), handler, update);
+            if (queryText.startsWith(Event.CLICK_NEXT.name())) {
+                String nextDate = queryText.substring(Event.CLICK_NEXT.name().length());
+                onNextDayClick(callbackFormat.parse(nextDate), context, callbackQuery);
                 return true;
             }
-            if (callbackQuery.startsWith(Event.CLICK_PREV.name())) {
-                String previousDate = callbackQuery.substring(Event.CLICK_PREV.name().length());
-                onPreviousDayClick(callbackFormat.parse(previousDate), handler, update);
+            if (queryText.startsWith(Event.CLICK_PREV.name())) {
+                String previousDate = queryText.substring(Event.CLICK_PREV.name().length());
+                onPreviousDayClick(callbackFormat.parse(previousDate), context, callbackQuery);
                 return true;
             }
-            if (callbackQuery.startsWith(Event.CLICK_DAY.name())) {
-                String date = callbackQuery.substring(Event.CLICK_DAY.name().length());
-                onDayClick(callbackFormat.parse(date), handler, update);
+            if (queryText.startsWith(Event.CLICK_DAY.name())) {
+                String date = queryText.substring(Event.CLICK_DAY.name().length());
+                onDayClick(callbackFormat.parse(date), context, callbackQuery);
                 return true;
             }
-            if (callbackQuery.equals(Event.CLICK_BACK.name())) {
-                onBackClick(handler, update);
+            if (queryText.equals(Event.CLICK_BACK.name())) {
+                onBackClick(context, callbackQuery);
                 return true;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            if (queryText.startsWith(Event.CLICK_OUT_OF_RANGE.name())) {
+                String date = queryText.substring(Event.CLICK_OUT_OF_RANGE.name().length());
+                onOutOfRange(callbackFormat.parse(date), context, callbackQuery);
+            }
+        } catch (ParseException e) {
             throw new RuntimeException(e);
         }
         return false;
     }
 
-    private void onNextDayClick(Date nextDate, CommandResultHandler handler, Update update) {
-        display(nextDate, handler, update.getCallbackQuery().getMessage().getChatId());
+    private void onNextDayClick(Date nextDate, Context context, CallbackQuery query) {
+        display(nextDate, context);
+        context.ignoreCallback(query);
     }
 
-    private void onPreviousDayClick(Date previousDate, CommandResultHandler handler, Update update) {
-        display(previousDate, handler, update.getCallbackQuery().getMessage().getChatId());
+    private void onPreviousDayClick(Date previousDate, Context context, CallbackQuery query) {
+        display(previousDate, context);
+        context.ignoreCallback(query);
     }
 
-    public abstract void onDayClick(Date date, CommandResultHandler handler, Update update);
+    private void onOutOfRange(Date date, Context context, CallbackQuery callbackQuery) {
+        SimpleDateFormat headerFormat = new SimpleDateFormat(DEF_HEADER_PATTERN, context.getLocale());
+        String message = headerFormat.format(date) + " " + context.getResource("keyboard.calendar.outOfRange");
+        context.answerCallbackQuery(message, callbackQuery);
+    }
 
-    public abstract void onBackClick(CommandResultHandler handler, Update update);
+    public abstract void onDayClick(Date date, Context context, CallbackQuery query);
 
-    public void display(Date date, CommandResultHandler handler, Long chatId) {
+    public abstract void onBackClick(Context context, CallbackQuery query);
+
+    public void display(Date date, Context context) {
         monthToDisplay = date;
         keyboard.clear();
-        keyboard.addRow(createHeader());
-        keyboard.addRow(createDaysOfWeekNames());
+        keyboard.addRow(createHeader(context.getLocale()));
+        keyboard.addRow(createDaysOfWeekNames(context.getLocale()));
         keyboard.addGrid(createWeedDaysGrid());
-        keyboard.addRow(createBottomPanel());
-        keyboardMessage = MessageUtils.sendOrEdit(keyboardMessage, chatId, DEF_HEADER, keyboard.build(), handler);
+        keyboard.addRow(createBottomPanel(context));
+        context.showKeyboard(context.getResource("keyboard.calendar.selectDay"), keyboard.build());
     }
 
-    private List<Button> createHeader() {
+    private List<Button> createHeader(Locale locale) {
         List<Button> header = new ArrayList<>(1);
+        SimpleDateFormat headerFormat = new SimpleDateFormat(DEF_HEADER_PATTERN, locale);
         String monthHeader = headerFormat.format(monthToDisplay);
-        header.add(new Button(monthHeader, "ignore"));
+        header.add(new Button(monthHeader, Command.IGNORE_QUERY));
         return header;
     }
 
-    private List<Button> createDaysOfWeekNames() {
+    private List<Button> createDaysOfWeekNames(Locale locale) {
         List<Button> daysOfWeekNames = new ArrayList<>(7);
-        String[] daysOfWeek = getDaysOfWeek();
+        String[] daysOfWeek = getDaysOfWeek(locale);
         for (String dayOfWeed : daysOfWeek) {
-            daysOfWeekNames.add(new Button(dayOfWeed, "ignore"));
+            daysOfWeekNames.add(new Button(dayOfWeed, Command.IGNORE_QUERY));
         }
         return daysOfWeekNames;
     }
@@ -135,7 +146,7 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
                 if (calendar.get(Calendar.MONTH) == monthId) {
                     daysOfWeek.add(new Button(getDayText(calendar), getDayCallback(calendar)));
                 } else {
-                    daysOfWeek.add(new Button(" ", "ignore"));
+                    daysOfWeek.add(new Button(" ", Command.IGNORE_QUERY));
                 }
                 calendar.add(Calendar.DAY_OF_YEAR, 1);
             }
@@ -146,71 +157,66 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
 
     /**
      * Allows to override default behavior and implement different data display strategies
-     *
-     * @param calendar
-     * @return
      */
     protected String getDayText(Calendar calendar) {
-        String dayOfMonth = String.valueOf(calendar.get(Calendar.DAY_OF_MONTH));
-        return dayOfMonth;
+        return String.valueOf(calendar.get(Calendar.DAY_OF_MONTH));
     }
 
     /**
      * Allows to override default behavior and implement different data display strategies
-     *
-     * @param calendar
-     * @return
      */
     protected String getDayCallback(Calendar calendar) {
         String callbackDate = callbackFormat.format(calendar.getTime());
         return Event.CLICK_DAY + callbackDate;
     }
 
-    private List<Button> createBottomPanel() {
+    private List<Button> createBottomPanel(Context context) {
         List<Button> bottomPanel = new ArrayList<>(3);
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(monthToDisplay);
+        // create callback for prev month button
         calendar.add(Calendar.MONTH, -1);
-        // clear left button if prev month if out of range
+        String callbackDate = callbackFormat.format(calendar.getTime());
+        String prevMonthCallback;
         if (begin == null) {
-            String callbackDate = callbackFormat.format(calendar.getTime());
-            bottomPanel.add(new Button("<", Event.CLICK_PREV + callbackDate));
+            prevMonthCallback = Event.CLICK_PREV + callbackDate;
         } else {
             if (DatesCompare.afterOrSameMonth(calendar.getTime(), begin)) {
-                String callbackDate = callbackFormat.format(calendar.getTime());
-                bottomPanel.add(new Button("<", Event.CLICK_PREV + callbackDate));
+                prevMonthCallback = Event.CLICK_PREV + callbackDate;
             } else {
-                bottomPanel.add(new Button(" ", "ignore"));
+                prevMonthCallback = Event.CLICK_OUT_OF_RANGE + callbackDate;
             }
         }
-
-        bottomPanel.add(new Button("Back", Event.CLICK_BACK.toString()));
 
         calendar.setTime(monthToDisplay);
+        // create callback for next month button
         calendar.add(Calendar.MONTH, 1);
-        // clear right button if next month if out of range
+        callbackDate = callbackFormat.format(calendar.getTime());
+        String nextMonthCallback;
         if (end == null) {
-            String callbackDate = callbackFormat.format(calendar.getTime());
-            bottomPanel.add(new Button(">", Event.CLICK_NEXT + callbackDate));
+            nextMonthCallback = Event.CLICK_NEXT + callbackDate;
         } else {
             if (DatesCompare.beforeOrSameMonth(calendar.getTime(), end)) {
-                String callbackDate = callbackFormat.format(calendar.getTime());
-                bottomPanel.add(new Button(">", Event.CLICK_NEXT + callbackDate));
+                nextMonthCallback = Event.CLICK_NEXT + callbackDate;
             } else {
-                bottomPanel.add(new Button(" ", "ignore"));
+                nextMonthCallback = Event.CLICK_OUT_OF_RANGE + callbackDate;
             }
         }
+
+        bottomPanel.add(new Button("<", prevMonthCallback));
+        bottomPanel.add(new Button(context.getResource("keyboard.calendar.back"), Event.CLICK_BACK.toString()));
+        bottomPanel.add(new Button(">", nextMonthCallback));
         return bottomPanel;
     }
 
     /**
      * Get add days of week in array
      */
-    private String[] getDaysOfWeek() {
+    private String[] getDaysOfWeek(Locale locale) {
         if (this.daysOfWeek != null)
             return this.daysOfWeek;
         String[] daysOfWeek = new String[7];
-        SimpleDateFormat dateFormat = new SimpleDateFormat(DEF_DAY_OF_WEEK_PATTERN);
+        SimpleDateFormat dateFormat = new SimpleDateFormat(DEF_DAY_OF_WEEK_PATTERN, locale);
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.DAY_OF_WEEK, calendar.getMinimum(Calendar.DAY_OF_WEEK));
         daysOfWeek[0] = dateFormat.format(calendar.getTime());
@@ -220,13 +226,5 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
         }
         this.daysOfWeek = daysOfWeek;
         return daysOfWeek;
-    }
-
-    public void setKeyboardMessage(Message keyboardMessage) {
-        this.keyboardMessage = keyboardMessage;
-    }
-
-    public Message getKeyboardMessage() {
-        return keyboardMessage;
     }
 }

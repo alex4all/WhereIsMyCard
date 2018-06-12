@@ -25,7 +25,7 @@ public class AppointmentsManager {
 
     public static final int DAYS_TO_SCAN = 180;
     private static final long UPDATE_PERIOD = 20 * 60 * 1000;
-    private static final long REQUEST_DELAY = 2500;
+    private static final long REQUEST_DELAY = 122500;
     private static final int MAX_AVAILABLE_DATES = 10;
     private static final int EXPIRATION_TIME_SEC = 60 * 60;
 
@@ -43,15 +43,15 @@ public class AppointmentsManager {
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
         readLock = lock.readLock();
         writeLock = lock.writeLock();
-        preloadDataFromRedis();
+        loadDataFromRedis();
 
         Timer timer = new Timer(true);
         TimerTask timerTask = new UpdateTask(DAYS_TO_SCAN);
         timer.schedule(timerTask, 0, 60 * 1000);
     }
 
-    private void preloadDataFromRedis() {
-        log.info("Preloading data from redis");
+    private void loadDataFromRedis() {
+        log.info("Loading data from redis");
         SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_PATTERN);
         Calendar calendar = Calendar.getInstance();
         try (Jedis jedis = jedisCache.getConnection()) {
@@ -59,41 +59,45 @@ public class AppointmentsManager {
             for (int i = 0; i < DAYS_TO_SCAN; i++) {
                 String date = dateFormat.format(calendar.getTime());
                 for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
-                    StringBuilder key = new StringBuilder("AppointmentDate")
+                    String key = new StringBuilder("AppointmentDate")
                             .append(".").append(type.name())
-                            .append(".").append(date);
-                    pipe.hgetAll(key.toString());
+                            .append(".").append(date)
+                            .toString();
+                    log.debug("Loading: " + key);
+                    pipe.hgetAll(key);
                 }
                 calendar.add(Calendar.DAY_OF_YEAR, 1);
             }
             List<Object> result = pipe.syncAndReturnAll();
+            int loaded = 0;
             for (Object object : result) {
-                Map<String, String> map = (Map<String, String>) object;
-                if (map.isEmpty())
-                    continue;
-                AppointmentDate date = new AppointmentDate(map);
-                log.info("Preloaded date: " + date.toString());
                 try {
+                    Map<String, String> map = (Map<String, String>) object;
+                    if (map.isEmpty())
+                        continue;
+                    AppointmentDate date = new AppointmentDate(map);
+                    log.debug("Load date: " + date.toString());
+                    loaded++;
                     cacheLocal(date, dateFormat);
-                } catch (ParseException e) {
-                    e.printStackTrace();
+                } catch (ClassCastException e) {
+                    log.error("Can't cast result from redis to Map<String, String>", e);
                 }
             }
+            log.info("Complete loading appointment dates info. Items loaded: " + loaded);
         } catch (JedisException e) {
-            e.printStackTrace();
+            log.error(e);
         }
-        log.info("Preload complete");
     }
 
     public static AppointmentsManager getInstance() {
         return INSTANCE;
     }
 
-    public List<AppointmentDate> getDateInfo(Date date) throws ParseException {
+    public List<AppointmentDate> getDateInfo(Date date) {
         return getDateInfo(date.getTime());
     }
 
-    public List<AppointmentDate> getDateInfo(long dateAsMills) throws ParseException {
+    private List<AppointmentDate> getDateInfo(long dateAsMills) {
         List<AppointmentDate> dates = new ArrayList<>();
         readLock.lock();
         try {
@@ -109,11 +113,11 @@ public class AppointmentsManager {
     public List<AppointmentDate> getFirstAvailableDates(AppointmentDate.Type type, int count) {
         List<AppointmentDate> dates = new ArrayList<>();
         if (count > MAX_AVAILABLE_DATES) {
-            log.info(count + " is too big. Use default value: " + MAX_AVAILABLE_DATES);
+            log.warn(count + " is too big. Use default value: " + MAX_AVAILABLE_DATES);
             count = MAX_AVAILABLE_DATES;
         }
         if (count < 1) {
-            log.info(count + " is not valid. Use min value: 1");
+            log.warn(count + " is not valid. Use min value: 1");
             count = 1;
         }
         readLock.lock();
@@ -135,10 +139,14 @@ public class AppointmentsManager {
      * Update data in local cache.
      *
      * @param updatedDateInfo updated information about date
-     * @throws ParseException
      */
-    private void cacheLocal(AppointmentDate updatedDateInfo, DateFormat dateFormat) throws ParseException {
-        Long dateKey = Utils.dateToMills(updatedDateInfo.getDate(), dateFormat);
+    private void cacheLocal(AppointmentDate updatedDateInfo, DateFormat dateFormat) {
+        Long dateKey = null;
+        try {
+            dateKey = Utils.dateToMills(updatedDateInfo.getDate(), dateFormat);
+        } catch (ParseException e) {
+            log.error("AppointmentDate is not cached. Can't parse date: " + updatedDateInfo.getDate(), e);
+        }
         AppointmentDate.Type type = updatedDateInfo.getType();
         readLock.lock();
         try {
@@ -166,7 +174,7 @@ public class AppointmentsManager {
             jedis.hmset(key, appointmentDate.getAsMap());
             jedis.expire(key, EXPIRATION_TIME_SEC);
         } catch (JedisException e) {
-            e.printStackTrace();
+            log.error(e);
         }
     }
 
@@ -222,18 +230,12 @@ public class AppointmentsManager {
                         cacheLocal(appointmentDate, dateFormat);
                         cacheRemote(appointmentDate);
                     } catch (IOException e) {
-                        log.info("Exception occurred while sending request to urzad : " + e.getMessage());
-                        e.printStackTrace();
-                    } catch (ParseException e) {
-                        log.info("Can't parse date : " + date + "; Error: " + e.getMessage());
-                        e.printStackTrace();
+                        log.error("Exception occurred while sending request to urzad", e);
                     }
-
                     try {
                         Thread.sleep(REQUEST_DELAY);
                     } catch (InterruptedException e) {
-                        log.info("Exception occurred while sleep: " + e.getMessage());
-                        e.printStackTrace();
+                        log.error("Exception occurred while sleep: " + e.getMessage());
                     }
                 }
                 calendar.add(Calendar.DAY_OF_YEAR, 1);

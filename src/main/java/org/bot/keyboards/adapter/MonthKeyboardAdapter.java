@@ -2,27 +2,21 @@ package org.bot.keyboards.adapter;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.bot.commands.CommandResultHandler;
+import org.bot.commands.Context;
 import org.bot.keyboards.Button;
 import org.bot.keyboards.VerticalKeyboard;
 import org.bot.utils.DatesCompare;
-import org.bot.utils.MessageUtils;
-import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public abstract class MonthKeyboardAdapter implements KeyboardAdapter {
     private static final Logger log = LogManager.getLogger(MonthKeyboardAdapter.class);
     private static final String DEF_DATE_PATTERN = "LLLL YYYY";
     private static final String DEF_CALLBACK_DATE_PATTERN = "yyyy-MM-dd";
     private static final String MONTH_CLICK_PREFIX = "ClickOnMonth_";
-    private static final String DEF_HEADER = "Select day of month";
 
     private SimpleDateFormat callbackFormat = new SimpleDateFormat(DEF_CALLBACK_DATE_PATTERN);
 
@@ -34,22 +28,17 @@ public abstract class MonthKeyboardAdapter implements KeyboardAdapter {
     private Date begin;
     private Date end;
 
-    /**
-     * Keep message with keyboard to be able to edit it
-     */
-    private Message keyboardMessage;
-
     public MonthKeyboardAdapter(Date begin, Date end) {
         this.begin = begin;
         this.end = end;
     }
 
-    private void initialize() {
+    private void initialize(Locale locale) {
         if (initialized)
             return;
         if (begin.getTime() > end.getTime())
             throw new RuntimeException("Begin time can't be more than end time");
-        SimpleDateFormat textDateFormat = new SimpleDateFormat(DEF_DATE_PATTERN);
+        SimpleDateFormat textDateFormat = new SimpleDateFormat(DEF_DATE_PATTERN, locale);
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(begin);
         log.info("Calendar begin: " + calendar.getTime().toString());
@@ -64,20 +53,20 @@ public abstract class MonthKeyboardAdapter implements KeyboardAdapter {
         initialized = true;
     }
 
-    public void display(CommandResultHandler handler, Long chatId) {
+    public void display(Context context) {
         // some sort of caching
-        initialize();
+        initialize(context.getLocale());
         log.info("Months to display: " + keyboardData);
-        keyboardMessage = MessageUtils.sendOrEdit(keyboardMessage, chatId, DEF_HEADER, keyboard.build(), handler);
+        context.showKeyboard(context.getResource("keyboard.months.selectMonth"), keyboard.build());
     }
 
     @Override
-    public boolean processCallback(CommandResultHandler handler, Update update) {
+    public boolean processCallback(Context context, Update update) {
         String callbackQuery = update.getCallbackQuery().getData();
         try {
             if (callbackQuery.startsWith(MONTH_CLICK_PREFIX)) {
                 String date = callbackQuery.substring(MONTH_CLICK_PREFIX.length());
-                onMonthClick(callbackFormat.parse(date), handler, update);
+                onMonthClick(callbackFormat.parse(date), context, update);
                 return true;
             }
         } catch (ParseException e) {
@@ -86,13 +75,5 @@ public abstract class MonthKeyboardAdapter implements KeyboardAdapter {
         return false;
     }
 
-    public abstract void onMonthClick(Date date, CommandResultHandler handler, Update update);
-
-    public void setKeyboardMessage(Message keyboardMessage) {
-        this.keyboardMessage = keyboardMessage;
-    }
-
-    public Message getKeyboardMessage() {
-        return keyboardMessage;
-    }
+    public abstract void onMonthClick(Date date, Context context, Update update);
 }

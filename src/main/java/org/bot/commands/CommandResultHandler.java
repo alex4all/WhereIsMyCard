@@ -1,5 +1,8 @@
 package org.bot.commands;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.telegram.telegrambots.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.api.objects.Message;
@@ -7,7 +10,7 @@ import org.telegram.telegrambots.bots.AbsSender;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 public class CommandResultHandler {
-
+    private static final Logger log = LogManager.getLogger(CommandResultHandler.class);
     private AbsSender sender;
 
     public CommandResultHandler(AbsSender sender) {
@@ -18,7 +21,6 @@ public class CommandResultHandler {
         try {
             return sender.execute(message);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
@@ -27,7 +29,15 @@ public class CommandResultHandler {
         try {
             sender.execute(message);
         } catch (TelegramApiException e) {
-            e.printStackTrace();
+            log.error(e);
+        }
+    }
+
+    public void execute(AnswerCallbackQuery answerCallbackQuery) {
+        try {
+            sender.execute(answerCallbackQuery);
+        } catch (TelegramApiException e) {
+            log.error(e);
         }
     }
 }
