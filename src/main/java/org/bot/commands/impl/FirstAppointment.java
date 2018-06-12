@@ -9,6 +9,7 @@ import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
 import org.bot.keyboards.Button;
 import org.bot.keyboards.HorizontalKeyboard;
+import org.bot.utils.EditText;
 import org.telegram.telegrambots.api.objects.Update;
 
 import java.util.ArrayList;
@@ -18,7 +19,6 @@ import java.util.List;
 public class FirstAppointment extends Command {
     private static final Logger log = LogManager.getLogger(FirstAppointment.class);
     private static final AppointmentsManager DATES_MANAGER = AppointmentsManager.getInstance();
-    private static final String SELECT_MESSAGE = "Select appointment type";
 
     public FirstAppointment(CommandResultHandler handler, Update update) {
         super(handler, update);
@@ -33,7 +33,7 @@ public class FirstAppointment extends Command {
         HorizontalKeyboard keyboard = new HorizontalKeyboard();
         keyboard.setButtons(buttons);
         log.info("Send new keyboard");
-        showKeyboard(SELECT_MESSAGE, keyboard.create());
+        showKeyboard(getResource("command.firstAppointment.selectType"), keyboard.create());
     }
 
     @Override
@@ -41,17 +41,25 @@ public class FirstAppointment extends Command {
         String callbackQuery = update.getCallbackQuery().getData();
         AppointmentDate.Type type = AppointmentDate.Type.valueOf(callbackQuery);
         List<AppointmentDate> datesInfo = DATES_MANAGER.getFirstAvailableDates(type, 1);
-        String firstAppointment = datesInfoToString(datesInfo);
+        String firstAppointment = datesInfoToString(type, datesInfo);
         sendOrEditLast(firstAppointment);
     }
 
-    private String datesInfoToString(List<AppointmentDate> datesInfo) {
-        if (datesInfo.size() == 0) {
-            return "No data found";
-        }
+    private String datesInfoToString(AppointmentDate.Type type, List<AppointmentDate> datesInfo) {
         StringBuilder result = new StringBuilder();
-        for (AppointmentDate dayInfo : datesInfo)
-            result.append(dayInfo.toMessageWithBoth()).append(System.lineSeparator());
+        result.append(EditText.bold(type.name())).append(System.lineSeparator());
+        if (datesInfo.size() == 0) {
+            result.append(getResource("command.dateInfo.noData"));
+            return result.toString();
+        }
+
+        for (AppointmentDate dayInfo : datesInfo) {
+            result.append(EditText.bold(dayInfo.getDate())).append(": ");
+            result.append(dayInfo.getAvailableTime()).append(" ");
+            long minutesAgo = dayInfo.getTimeAfterUpdate();
+            String timeAfterUpdate = EditText.timeAfterUpdate(minutesAgo, this);
+            result.append(EditText.italic(timeAfterUpdate)).append(System.lineSeparator());
+        }
         return result.toString();
     }
 }

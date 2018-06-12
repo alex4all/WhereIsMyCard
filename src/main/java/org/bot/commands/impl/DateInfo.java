@@ -8,14 +8,14 @@ import org.bot.commands.CommandResultHandler;
 import org.bot.commands.Context;
 import org.bot.keyboards.adapter.CalendarKeyboardAdapter;
 import org.bot.keyboards.adapter.MonthKeyboardAdapter;
+import org.bot.utils.EditText;
 import org.telegram.telegrambots.api.objects.CallbackQuery;
 import org.telegram.telegrambots.api.objects.Update;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
+import java.util.Map;
 
 @BotCommand(name = "date_info")
 public class DateInfo extends Command {
@@ -48,26 +48,26 @@ public class DateInfo extends Command {
         calendarAdapter.processCallback(this, update);
     }
 
-    private String dateInfoToString(String date, List<AppointmentDate> dateInfo) {
-        // verify thar result is valid. no null elements
-        List<AppointmentDate> verifiedDates = new ArrayList<>();
-        for (AppointmentDate appDate : dateInfo) {
-            if (appDate != null)
-                verifiedDates.add(appDate);
+    private String dateInfoToString(String date, Map<AppointmentDate.Type, AppointmentDate> dateInfo) {
+        StringBuilder result = new StringBuilder(EditText.bold(date)).append(System.lineSeparator());
+
+        for (Map.Entry<AppointmentDate.Type, AppointmentDate> entry : dateInfo.entrySet()) {
+            AppointmentDate.Type type = entry.getKey();
+            AppointmentDate appointment = entry.getValue();
+            result.append(EditText.bold(type.name())).append(": ");
+            if (appointment == null) {
+                result.append(getResource("command.dateInfo.noData")).append(System.lineSeparator());
+                continue;
+            }
+            if (!appointment.isAvailable())
+                result.append(getResource("command.dateInfo.noAvailableTime")).append(" ");
+            else {
+                result.append(appointment.getAvailableTime()).append(" ");
+            }
+            long minutesAgo = appointment.getTimeAfterUpdate();
+            String updatedMinutesAgo = EditText.timeAfterUpdate(minutesAgo, this);
+            result.append(EditText.italic(updatedMinutesAgo)).append(System.lineSeparator());
         }
-
-        if (verifiedDates.size() == 0) {
-            return new StringBuilder()
-                    .append("<b>").append(date).append(":</b>")
-                    .append("No data found").toString();
-        }
-
-        StringBuilder result = new StringBuilder();
-        result.append("<b>").append(date).append(":</b>").append(System.lineSeparator());
-
-        for (AppointmentDate appDate : dateInfo)
-            if (appDate != null)
-                result.append(appDate.toMessageWithType()).append(System.lineSeparator());
         return result.toString();
     }
 
@@ -90,8 +90,8 @@ public class DateInfo extends Command {
 
         @Override
         public void onDayClick(Date date, Context context, CallbackQuery query) {
-            List<AppointmentDate> result = DATES_MANAGER.getDateInfo(date);
-            String text = dateInfoToString(dateFormat.format(date), result);
+            Map<AppointmentDate.Type, AppointmentDate> dateInfo = DATES_MANAGER.getDateInfo(date);
+            String text = dateInfoToString(dateFormat.format(date), dateInfo);
             context.sendOrEditLast(text);
             context.ignoreCallback(query);
         }

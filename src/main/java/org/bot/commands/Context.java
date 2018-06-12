@@ -17,21 +17,25 @@ import java.util.ResourceBundle;
 public abstract class Context {
     private static final Logger log = LogManager.getLogger(Context.class);
     private static final String RESOURCES = "messages";
+
     private CommandResultHandler handler;
-    private Long chatId;
-    private User user;
-
-
-    private Locale locale;
     private ResourceBundle messages;
     private Message keyboardMessage;
     private Message lastBotMessage;
+
+    private Long chatId;
+    private User user;
+    private Locale locale;
 
     public Context(CommandResultHandler handler, Update update) {
         this.handler = handler;
         chatId = update.getMessage().getChatId();
         user = update.getMessage().getFrom();
-        locale = new Locale(update.getMessage().getFrom().getLanguageCode());
+        String languageCode = update.getMessage().getFrom().getLanguageCode();
+        log.info("languageCode: " + languageCode);
+        locale = Locale.forLanguageTag(languageCode);
+        ;
+        log.info("locale: " + locale.toString());
         messages = ResourceBundle.getBundle(RESOURCES, locale, new UTF8Control());
     }
 
@@ -40,10 +44,7 @@ public abstract class Context {
     }
 
     public String getResource(String id) {
-        String resource = messages.getString(id);
-        log.info("resourceId: " + id);
-        log.info("resource: " + resource);
-        return resource;
+        return messages.getString(id);
     }
 
     public Locale getLocale() {

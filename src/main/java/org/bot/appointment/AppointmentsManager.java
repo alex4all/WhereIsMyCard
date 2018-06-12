@@ -93,21 +93,21 @@ public class AppointmentsManager {
         return INSTANCE;
     }
 
-    public List<AppointmentDate> getDateInfo(Date date) {
+    public Map<AppointmentDate.Type, AppointmentDate> getDateInfo(Date date) {
         return getDateInfo(date.getTime());
     }
 
-    private List<AppointmentDate> getDateInfo(long dateAsMills) {
-        List<AppointmentDate> dates = new ArrayList<>();
+    private Map<AppointmentDate.Type, AppointmentDate> getDateInfo(long dateAsMills) {
+        Map<AppointmentDate.Type, AppointmentDate> dateInfo = new HashMap<>(AppointmentDate.Type.values().length);
         readLock.lock();
         try {
             for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
-                dates.add(appointmentCache.get(type).get(dateAsMills));
+                dateInfo.put(type, appointmentCache.get(type).get(dateAsMills));
             }
         } finally {
             readLock.unlock();
         }
-        return dates;
+        return dateInfo;
     }
 
     public List<AppointmentDate> getFirstAvailableDates(AppointmentDate.Type type, int count) {

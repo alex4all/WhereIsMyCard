@@ -24,4 +24,9 @@ public class Button {
     public void setCallback(String callback) {
         this.callback = callback;
     }
+
+    @Override
+    public String toString() {
+        return text + ":" + callback;
+    }
 }

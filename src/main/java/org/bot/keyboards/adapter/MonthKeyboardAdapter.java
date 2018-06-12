@@ -56,7 +56,7 @@ public abstract class MonthKeyboardAdapter implements KeyboardAdapter {
     public void display(Context context) {
         // some sort of caching
         initialize(context.getLocale());
-        log.info("Months to display: " + keyboardData);
+        log.debug("Months to display: " + keyboardData);
         context.showKeyboard(context.getResource("keyboard.months.selectMonth"), keyboard.build());
     }
 

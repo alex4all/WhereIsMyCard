@@ -3,7 +3,9 @@ package org.bot.appointment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AppointmentDate {
@@ -14,7 +16,7 @@ public class AppointmentDate {
 
     private Type type;
     private String date;
-    private String availableTime;
+    private List<String> availableTime;
     private long updatedAt;
     boolean available = true;
 
@@ -23,19 +25,27 @@ public class AppointmentDate {
         this.date = date;
         this.updatedAt = System.currentTimeMillis();
         if (availableTime.startsWith(NEGATIVE_RESULT)) {
-            this.availableTime = "No available time";
             available = false;
-        } else
-            this.availableTime = availableTime;
+        } else {
+            log.info("Available time: " + availableTime);
+
+            availableTime = availableTime.replaceAll("  ", " ");
+            String[] availableTimeArray = availableTime.split(" ");
+            this.availableTime = Arrays.asList(availableTimeArray);
+            log.info("availableTime: " + this.availableTime.toString());
+        }
     }
 
     public AppointmentDate(Map<String, String> map) {
         log.info(map);
         type = Type.valueOf(map.get("type"));
         date = map.get("date");
-        availableTime = map.get("availableTime");
         updatedAt = Long.parseLong(map.get("updatedAt"));
         available = Boolean.parseBoolean(map.get("available"));
+        if (available) {
+            String[] availableTimeArray = map.get("availableTime").split(" ");
+            availableTime = Arrays.asList(availableTimeArray);
+        }
     }
 
     public void update(AppointmentDate newDate) {
@@ -48,9 +58,14 @@ public class AppointmentDate {
         Map<String, String> map = new HashMap<>();
         map.put("type", type.name());
         map.put("date", date);
-        map.put("availableTime", availableTime);
         map.put("updatedAt", String.valueOf(updatedAt));
         map.put("available", String.valueOf(available));
+        if (available) {
+            StringBuilder availableTimeBuilder = new StringBuilder();
+            for (String time : availableTime)
+                availableTimeBuilder.append(time).append(" ");
+            map.put("availableTime", availableTimeBuilder.substring(0, availableTimeBuilder.length() - 1));
+        }
         return map;
     }
 
@@ -74,15 +89,12 @@ public class AppointmentDate {
         this.updatedAt = updatedAt;
     }
 
-    public String getTimeAfterUpdate() {
+    public long getTimeAfterUpdate() {
         long timeAfterUpdate = System.currentTimeMillis() - updatedAt;
-        long minutesAgo = timeAfterUpdate / (1000 * 60);
-        if (minutesAgo < 1)
-            return "Just updated";
-        return "Updated " + minutesAgo + " min ago";
+        return timeAfterUpdate / (1000 * 60);
     }
 
-    public String getAvailableTime() {
+    public List<String> getAvailableTime() {
         return availableTime;
     }
 
@@ -93,27 +105,6 @@ public class AppointmentDate {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append(date);
-        return "Type: " + type + "; Date: " + date + ": " + availableTime + "; " + getTimeAfterUpdate();
-    }
-
-    public String toMessageWithDate() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("<b>").append(date).append("</b>").append(": ");
-        builder.append(availableTime).append(" <i>").append(getTimeAfterUpdate()).append("</i>");
-        return builder.toString();
-    }
-
-    public String toMessageWithType() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("<b>").append(type).append("</b>").append(": ");
-        builder.append(availableTime).append(" <i>").append(getTimeAfterUpdate()).append("</i>");
-        return builder.toString();
-    }
-
-    public String toMessageWithBoth() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("<b>").append(type).append(" ").append(date).append("</b>").append(":").append(System.lineSeparator());
-        builder.append(availableTime).append(" <i>").append(getTimeAfterUpdate()).append("</i>");
-        return builder.toString();
+        return "Type: " + type + "; Date: " + date + ": " + availableTime + "; " + updatedAt;
     }
 }
