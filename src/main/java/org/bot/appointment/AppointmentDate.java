@@ -43,7 +43,8 @@ public class AppointmentDate {
         updatedAt = Long.parseLong(map.get("updatedAt"));
         available = Boolean.parseBoolean(map.get("available"));
         if (available) {
-            String[] availableTimeArray = map.get("availableTime").split(" ");
+            String time = map.get("availableTime").replaceAll("  ", " "); // TODO tmp fix for backward compatibility
+            String[] availableTimeArray = time.split(" ");
             availableTime = Arrays.asList(availableTimeArray);
         }
     }

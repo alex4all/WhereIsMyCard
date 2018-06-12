@@ -10,6 +10,7 @@ import org.bot.commands.CommandResultHandler;
 import org.bot.keyboards.Button;
 import org.bot.keyboards.HorizontalKeyboard;
 import org.bot.utils.EditText;
+import org.telegram.telegrambots.api.objects.CallbackQuery;
 import org.telegram.telegrambots.api.objects.Update;
 
 import java.util.ArrayList;
@@ -38,11 +39,13 @@ public class FirstAppointment extends Command {
 
     @Override
     public void processCallbackQuery(Update update) {
-        String callbackQuery = update.getCallbackQuery().getData();
-        AppointmentDate.Type type = AppointmentDate.Type.valueOf(callbackQuery);
+        CallbackQuery callbackQuery = update.getCallbackQuery();
+        String query = callbackQuery.getData();
+        AppointmentDate.Type type = AppointmentDate.Type.valueOf(query);
         List<AppointmentDate> datesInfo = DATES_MANAGER.getFirstAvailableDates(type, 1);
         String firstAppointment = datesInfoToString(type, datesInfo);
         sendOrEditLast(firstAppointment);
+        ignoreCallback(callbackQuery);
     }
 
     private String datesInfoToString(AppointmentDate.Type type, List<AppointmentDate> datesInfo) {
