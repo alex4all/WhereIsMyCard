@@ -25,7 +25,7 @@ public class AppointmentsManager {
 
     public static final int DAYS_TO_SCAN = 180;
     private static final long UPDATE_PERIOD = 20 * 60 * 1000;
-    private static final long REQUEST_DELAY = 122500;
+    private static final long REQUEST_DELAY = 2500;
     private static final int MAX_AVAILABLE_DATES = 10;
     private static final int EXPIRATION_TIME_SEC = 60 * 60;
 
