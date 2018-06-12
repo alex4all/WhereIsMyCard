@@ -13,9 +13,12 @@ public class EditText {
 
     public static String timeAfterUpdate(long minutesAgo, Context context) {
         String template;
+        long lastMinute = minutesAgo % 10;
         if (minutesAgo <= 1)
             template = context.getResource("appointment.date.justUpdated");
-        else if (minutesAgo >= 2 && minutesAgo <= 4)
+        else if(lastMinute == 1)
+            template = context.getResource("appointment.date.updated_1minAgo");
+        else if (lastMinute >= 2 && lastMinute <= 4)
             template = context.getResource("appointment.date.updated_2-4minAgo");
         else
             template = context.getResource("appointment.date.updated_5+minAgo");
