@@ -1,5 +1,7 @@
 package org.bot.commands;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.reflections.Reflections;
 import org.telegram.telegrambots.api.objects.Update;
 
@@ -8,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class CommandsManager {
-
+    private static final Logger log = LogManager.getLogger(CommandsManager.class);
     private Map<String, Class<Command>> commandsByName = new HashMap<>();
 
     public CommandsManager() {
@@ -18,7 +20,7 @@ public class CommandsManager {
             String commandName = command.getDeclaredAnnotation(BotCommand.class).name();
             commandsByName.put(commandName, (Class<Command>) command);
         }
-        System.out.println("List of available commands: " + commandsByName.keySet());
+        log.info("List of available commands: " + commandsByName.keySet());
     }
 
     public Command createCommand(Update update) {

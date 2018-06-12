@@ -109,11 +109,11 @@ public class AppointmentsManager {
     public List<AppointmentDate> getFirstAvailableDates(AppointmentDate.Type type, int count) {
         List<AppointmentDate> dates = new ArrayList<>();
         if (count > MAX_AVAILABLE_DATES) {
-            System.out.println(count + " is too big. Use default value: " + MAX_AVAILABLE_DATES);
+            log.info(count + " is too big. Use default value: " + MAX_AVAILABLE_DATES);
             count = MAX_AVAILABLE_DATES;
         }
         if (count < 1) {
-            System.out.println(count + " is not valid. Use min value: 1");
+            log.info(count + " is not valid. Use min value: 1");
             count = 1;
         }
         readLock.lock();
@@ -185,11 +185,11 @@ public class AppointmentsManager {
         @Override
         public void run() {
             boolean doScan = false;
-            System.out.println("UpdateTask checks data cached locally");
+            log.info("UpdateTask checks data cached locally");
             for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
                 TreeMap<Long, AppointmentDate> map = appointmentCache.get(type);
                 if (map.size() < daysToScan) {
-                    System.out.println(type.name() + " appointment info is not full: " + map.size());
+                    log.info(type.name() + " appointment info is not full: " + map.size());
                     doScan = true;
                     continue;
                 }
@@ -198,7 +198,7 @@ public class AppointmentsManager {
                 long updatedAt = entry.getValue().getUpdatedAt();
                 long dataKeepTime = System.currentTimeMillis() - updatedAt;
                 long dataKeepTimeMin = dataKeepTime / (1000 * 60);
-                System.out.println("Data updated " + dataKeepTimeMin + " min ago");
+                log.info("Data updated " + dataKeepTimeMin + " min ago");
                 if (dataKeepTime > UPDATE_PERIOD)
                     doScan = true;
             }
@@ -210,7 +210,7 @@ public class AppointmentsManager {
         private void updateAppointmentDates() {
             Calendar calendar = Calendar.getInstance();
             long startScan = System.currentTimeMillis();
-            System.out.println("Start scan");
+            log.info("Start scan");
             for (int i = 0; i < daysToScan; i++) {
                 String date = dateFormat.format(calendar.getTime());
                 for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
@@ -218,28 +218,28 @@ public class AppointmentsManager {
                         long updatedAt = System.currentTimeMillis();
                         AppointmentDate appointmentDate = ServerAPI.getDateInfo(date, type);
                         appointmentDate.setUpdatedAt(updatedAt);
-                        System.out.println("Updated: " + appointmentDate.toString());
+                        log.info("Updated: " + appointmentDate.toString());
                         cacheLocal(appointmentDate, dateFormat);
                         cacheRemote(appointmentDate);
                     } catch (IOException e) {
-                        System.out.println("Exception occurred while sending request to urzad : " + e.getMessage());
+                        log.info("Exception occurred while sending request to urzad : " + e.getMessage());
                         e.printStackTrace();
                     } catch (ParseException e) {
-                        System.out.println("Can't parse date : " + date + "; Error: " + e.getMessage());
+                        log.info("Can't parse date : " + date + "; Error: " + e.getMessage());
                         e.printStackTrace();
                     }
 
                     try {
                         Thread.sleep(REQUEST_DELAY);
                     } catch (InterruptedException e) {
-                        System.out.println("Exception occurred while sleep: " + e.getMessage());
+                        log.info("Exception occurred while sleep: " + e.getMessage());
                         e.printStackTrace();
                     }
                 }
                 calendar.add(Calendar.DAY_OF_YEAR, 1);
             }
             long scanTime = System.currentTimeMillis() - startScan;
-            System.out.println("Scan complete. Time taken: " + scanTime);
+            log.info("Scan complete. Time taken: " + scanTime);
         }
 
         /**

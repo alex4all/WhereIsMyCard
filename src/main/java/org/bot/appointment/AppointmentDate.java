@@ -1,10 +1,16 @@
 package org.bot.appointment;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class AppointmentDate {
+    private static final Logger log = LogManager.getLogger(AppointmentDate.class);
+    private static final String NEGATIVE_RESULT = "brak";
     public enum Type {ODBIOR, ZLOZENIE}
+
 
     private Type type;
     private String date;
@@ -16,7 +22,7 @@ public class AppointmentDate {
         this.type = type;
         this.date = date;
         this.updatedAt = System.currentTimeMillis();
-        if (availableTime.startsWith("brak")) {
+        if (availableTime.startsWith(NEGATIVE_RESULT)) {
             this.availableTime = "No available time";
             available = false;
         } else
@@ -25,7 +31,7 @@ public class AppointmentDate {
 
     public AppointmentDate(Map<String, String> map)
     {
-        System.out.println(map);
+        log.info(map);
         type = Type.valueOf(map.get("type"));
         date = map.get("date");
         availableTime = map.get("availableTime");

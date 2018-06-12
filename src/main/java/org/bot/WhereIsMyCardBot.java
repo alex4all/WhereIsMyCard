@@ -29,7 +29,7 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
         this.token = token;
         datesManager = AppointmentsManager.getInstance();
         commandsManager = new CommandsManager();
-        System.out.println("Bot started");
+        log.info("Bot started");
     }
 
     @Override

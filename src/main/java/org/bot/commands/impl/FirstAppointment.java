@@ -1,5 +1,7 @@
 package org.bot.commands.impl;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bot.appointment.AppointmentDate;
 import org.bot.appointment.AppointmentsManager;
 import org.bot.commands.BotCommand;
@@ -15,6 +17,7 @@ import java.util.List;
 
 @BotCommand(name = "first_appointment")
 public class FirstAppointment extends Command {
+    private static final Logger log = LogManager.getLogger(FirstAppointment.class);
     private static final AppointmentsManager DATES_MANAGER = AppointmentsManager.getInstance();
     private static final String SELECT_MESSAGE = "Select appointment type";
 
@@ -26,7 +29,7 @@ public class FirstAppointment extends Command {
         }
         HorizontalKeyboard keyboard = new HorizontalKeyboard();
         keyboard.setButtons(buttons);
-        System.out.println("Send new keyboard");
+        log.info("Send new keyboard");
         MessageUtils.sendMessage(handler, update, SELECT_MESSAGE, keyboard.create());
     }
 
@@ -38,11 +41,11 @@ public class FirstAppointment extends Command {
         if (lastBotMessage != null) {
             if (lastBotMessage.getText().equals(firstAppointment))
                 return;
-            System.out.println("edit message: " + lastBotMessage);
+            log.info("edit message: " + lastBotMessage);
             MessageUtils.edit(handler, lastBotMessage, firstAppointment);
         } else {
             lastBotMessage = MessageUtils.sendMessage(handler, update, firstAppointment);
-            System.out.println("lastBotMessage: " + lastBotMessage);
+            log.info("lastBotMessage: " + lastBotMessage);
         }
     }
 

@@ -1,5 +1,7 @@
 package org.bot.keyboards.adapter;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bot.commands.CommandResultHandler;
 import org.bot.keyboards.Button;
 import org.bot.keyboards.VerticalKeyboard;
@@ -16,9 +18,7 @@ import java.util.Date;
 import java.util.List;
 
 public abstract class MonthKeyboardAdapter implements KeyboardAdapter {
-    /**
-     * hardcoded constants
-     */
+    private static final Logger log = LogManager.getLogger(MonthKeyboardAdapter.class);
     private static final String DEF_DATE_PATTERN = "LLLL YYYY";
     private static final String DEF_CALLBACK_DATE_PATTERN = "yyyy-MM-dd";
     private static final String MONTH_CLICK_PREFIX = "ClickOnMonth_";
@@ -52,8 +52,8 @@ public abstract class MonthKeyboardAdapter implements KeyboardAdapter {
         SimpleDateFormat textDateFormat = new SimpleDateFormat(DEF_DATE_PATTERN);
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(begin);
-        System.out.println("Calendar begin: " + calendar.getTime().toString());
-        System.out.println("Calendar end: " + end.toString());
+        log.info("Calendar begin: " + calendar.getTime().toString());
+        log.info("Calendar end: " + end.toString());
         do {
             String textToDisplay = textDateFormat.format(calendar.getTime());
             String callback = MONTH_CLICK_PREFIX + callbackFormat.format(calendar.getTime());
@@ -67,7 +67,7 @@ public abstract class MonthKeyboardAdapter implements KeyboardAdapter {
     public void display(CommandResultHandler handler, Long chatId) {
         // some sort of caching
         initialize();
-        System.out.println("Months to display: " + keyboardData);
+        log.info("Months to display: " + keyboardData);
         keyboardMessage = MessageUtils.sendOrEdit(keyboardMessage, chatId, DEF_HEADER, keyboard.build(), handler);
     }
 

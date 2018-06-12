@@ -1,5 +1,7 @@
 package org.bot.keyboards.adapter;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bot.commands.CommandResultHandler;
 import org.bot.keyboards.Button;
 import org.bot.keyboards.GridKeyboard;
@@ -12,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
+    private static final Logger log = LogManager.getLogger(CalendarKeyboardAdapter.class);
     private static final String DEF_HEADER_PATTERN = "LLLL YYYY";
     private static final String DEF_DAY_OF_WEEK_PATTERN = "EE";
     private static final String DEF_CALLBACK_DATE_PATTERN = "yyyy-MM-dd";
@@ -114,14 +117,14 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
         // find first day of first week in this month (first day of week possible can be in prev month)
         calendar.add(Calendar.DAY_OF_YEAR, 1 - calendar.get(Calendar.DAY_OF_WEEK));
         Date firstWeekBegin = calendar.getTime();
-        System.out.println("firstWeekBegin: " + firstWeekBegin.toString());
+        log.info("firstWeekBegin: " + firstWeekBegin.toString());
 
         // find last day of last week of this month (last day of week possible can be in next month)
         calendar.setTime(monthToDisplay);
         calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
         calendar.add(Calendar.DAY_OF_YEAR, 7 - calendar.get(Calendar.DAY_OF_WEEK));
         Date lastDayOfLastWeek = calendar.getTime();
-        System.out.println("lastDayOfLastWeek: " + lastDayOfLastWeek.toString());
+        log.info("lastDayOfLastWeek: " + lastDayOfLastWeek.toString());
 
         // go through all days starting from first day of first week and up to the last day of last week
         calendar.setTime(firstWeekBegin);
