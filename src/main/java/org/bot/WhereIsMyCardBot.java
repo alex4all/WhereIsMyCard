@@ -73,7 +73,7 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
             Message message = callbackquery.getMessage();
             Command command = commandsHistory.getCommand(message.getChatId(), callbackquery.getFrom().getId());
             // user don't have active commands
-            if (command == null) {
+            if (command == null || command.getKeyboardMessage() == null) {
                 String languageCode = callbackquery.getFrom().getLanguageCode();
                 Locale locale = Locale.forLanguageTag(languageCode);
                 String noActiveCommands = Context.getResources(locale).getString("bot.notification.noActiveInterfaces");
@@ -81,12 +81,7 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
                 return;
             }
 
-            boolean clickOnActiveKeyboard;
-            if (command.getKeyboardMessage() == null)
-                clickOnActiveKeyboard = false;
-            else
-                clickOnActiveKeyboard = message.getMessageId().equals(command.getKeyboardMessage().getMessageId());
-
+            boolean clickOnActiveKeyboard = message.getMessageId().equals(command.getKeyboardMessage().getMessageId());
             if (!clickOnActiveKeyboard) {
                 String languageCode = callbackquery.getFrom().getLanguageCode();
                 Locale locale = Locale.forLanguageTag(languageCode);
@@ -94,7 +89,6 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
                 errorQuery(anotherCommandActive + " " + command.getName(), callbackquery);
                 return;
             }
-
             command.processCallbackQuery(update);
         }
     }
