@@ -21,11 +21,11 @@ public class Help extends Command {
     @Override
     public void process(Update update) {
         String help = new StringBuilder()
-                .append(FIRST_APPOINTMENT).append(" - ").append(getResource("command.help.firstAppointment")).append(System.lineSeparator())
-                .append(DATE_INFO).append(" - ").append(getResource("command.help.dateInfo")).append(System.lineSeparator())
-                .append(LINK).append(" - ").append(getResource("command.help.link")).append(System.lineSeparator())
-                .append(GITHUB).append(" - ").append(getResource("command.help.github")).append(System.lineSeparator())
-                .append(HELP).append(" - ").append(getResource("command.help.help")).append(System.lineSeparator())
+                .append(FIRST_APPOINTMENT).append(" ").append(getResource("command.help.firstAppointment")).append(System.lineSeparator())
+                .append(DATE_INFO).append(" ").append(getResource("command.help.dateInfo")).append(System.lineSeparator())
+                .append(LINK).append(" ").append(getResource("command.help.link")).append(System.lineSeparator())
+                .append(GITHUB).append(" ").append(getResource("command.help.github")).append(System.lineSeparator())
+                .append(HELP).append(" ").append(getResource("command.help.help")).append(System.lineSeparator())
                 .toString();
         sendMessage(help);
     }
