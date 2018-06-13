@@ -17,4 +17,9 @@ public class Cancel extends Command {
     public void process(Update update) {
 
     }
+
+    @Override
+    public String getName() {
+        return "cancel";
+    }
 }

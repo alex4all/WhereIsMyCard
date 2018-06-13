@@ -29,4 +29,9 @@ public class Help extends Command {
                 .toString();
         sendMessage(help);
     }
+
+    @Override
+    public String getName() {
+        return "help";
+    }
 }

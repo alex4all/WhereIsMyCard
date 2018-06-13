@@ -102,4 +102,9 @@ public class DateInfo extends Command {
             context.ignoreCallback(query);
         }
     }
+
+    @Override
+    public String getName() {
+        return "date_info";
+    }
 }

@@ -18,4 +18,9 @@ public class Link extends Command {
     public void process(Update update) {
         sendMessage(URL);
     }
+
+    @Override
+    public String getName() {
+        return "link";
+    }
 }

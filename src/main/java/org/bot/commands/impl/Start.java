@@ -23,4 +23,9 @@ public class Start extends Command {
         startMessage = String.format(startMessage, userName);
         sendMessage(startMessage);
     }
+
+    @Override
+    public String getName() {
+        return "start";
+    }
 }

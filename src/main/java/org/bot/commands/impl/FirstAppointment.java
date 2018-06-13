@@ -65,4 +65,9 @@ public class FirstAppointment extends Command {
         }
         return result.toString();
     }
+
+    @Override
+    public String getName() {
+        return "first_appointment";
+    }
 }

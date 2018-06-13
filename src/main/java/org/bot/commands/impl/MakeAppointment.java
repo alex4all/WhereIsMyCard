@@ -16,4 +16,9 @@ public class MakeAppointment extends Command {
     public void process(Update update) {
 
     }
+
+    @Override
+    public String getName() {
+        return "make_appointment";
+    }
 }

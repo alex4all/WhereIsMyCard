@@ -17,4 +17,9 @@ public class GitHub extends Command {
     public void process(Update update) {
         sendMessage(URL);
     }
+
+    @Override
+    public String getName() {
+        return "github";
+    }
 }

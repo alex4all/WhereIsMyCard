@@ -9,23 +9,24 @@ import java.util.Map;
 
 public class CommandsHistory {
     private static final Logger log = LogManager.getLogger(CommandsHistory.class);
-    private Map<String, Command> stackByChat = new HashMap<>();
-    private static final CommandsHistory INSTANCE = new CommandsHistory();
+    private Map<String, Command> lastUserCommand = new HashMap<>();
 
-    private CommandsHistory() {
+    public CommandsHistory() {
     }
 
-    public static CommandsHistory getInstance() {
-        return INSTANCE;
-    }
-
-    public void putCommand(String commandId, Command command) {
+    public void putCommand(Command command, Long chatId, Integer userId) {
+        String commandId = getId(chatId, userId);
         log.info("put command to cache: " + commandId);
-        stackByChat.put(commandId, command);
+        lastUserCommand.put(commandId, command);
     }
 
-    public Command getCommand(String commandId) {
+    public Command getCommand(Long chatId, Integer userId) {
+        String commandId = getId(chatId, userId);
         log.info("get command from cache: " + commandId);
-        return stackByChat.get(commandId);
+        return lastUserCommand.get(commandId);
+    }
+
+    public String getId(Long chatId, Integer userId) {
+        return new StringBuilder("chat_").append(chatId).append("user_").append(userId).toString();
     }
 }

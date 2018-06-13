@@ -22,4 +22,9 @@ public class CancelAppointment extends Command {
     public void processCallbackQuery(Update update) {
 
     }
+
+    @Override
+    public String getName() {
+        return "cancel_appointment";
+    }
 }

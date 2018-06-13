@@ -3,31 +3,31 @@ package org.bot;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bot.appointment.AppointmentsManager;
-import org.bot.commands.Command;
-import org.bot.commands.CommandResultHandler;
-import org.bot.commands.CommandsManager;
-import org.bot.commands.UnknownCommandException;
+import org.bot.commands.*;
+import org.bot.commands.impl.Help;
 import org.bot.utils.CommandsHistory;
-import org.bot.utils.UpdateToID;
 import org.telegram.telegrambots.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.CallbackQuery;
+import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
+
+import java.util.Locale;
 
 public class WhereIsMyCardBot extends TelegramLongPollingBot {
     private static final Logger log = LogManager.getLogger(WhereIsMyCardBot.class);
     private final AppointmentsManager datesManager;
     private final String botName;
     private final String token;
-    private final CommandsManager commandsManager;
+    private final CommandsManager commandsManager = new CommandsManager();
+    private final CommandsHistory commandsHistory = new CommandsHistory();
 
     public WhereIsMyCardBot(String botName, String token) {
         this.botName = botName;
         this.token = token;
         datesManager = AppointmentsManager.getInstance();
-        commandsManager = new CommandsManager();
         log.info("Bot started");
     }
 
@@ -41,11 +41,12 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
         log.debug("onUpdateReceived: " + update.toString());
         // process message
         if (update.hasMessage() && update.getMessage().hasText()) {
-            String message = update.getMessage().getText();
-            if (isCommand(message)) {
+            Message message = update.getMessage();
+            String messageText = message.getText();
+            if (isCommand(messageText)) {
                 try {
                     Command command = commandsManager.createCommand(new CommandResultHandler(this), update);
-                    CommandsHistory.getInstance().putCommand(UpdateToID.message(update), command);
+                    commandsHistory.putCommand(command, message.getChatId(), message.getFrom().getId());
                     command.process(update);
                     return;
                 } catch (UnknownCommandException e) {
@@ -54,9 +55,12 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
                 }
             }
 
-            Command command = CommandsHistory.getInstance().getCommand(UpdateToID.message(update));
+            Command command = commandsHistory.getCommand(message.getChatId(), message.getFrom().getId());
             if (command != null && command.isAwaitUserInput()) {
                 command.processUserInput(update);
+            } else {
+                Help help = new Help(new CommandResultHandler(this), update);
+                help.process(update);
             }
         }
 
@@ -66,22 +70,45 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
             if (Command.IGNORE_QUERY.equals(callbackquery.getData()))
                 ignoreQuery(callbackquery);
             log.info("Callback: " + update.getCallbackQuery().getData());
-            Command command = CommandsHistory.getInstance().getCommand(UpdateToID.callbackQuery(update));
-            if (command != null /*&& command.getUserId() == update.getCallbackQuery().getFrom().getId()*/) {
-                command.processCallbackQuery(update);
+            Message message = callbackquery.getMessage();
+            Command command = commandsHistory.getCommand(message.getChatId(), callbackquery.getFrom().getId());
+            // user don't have active commands
+            if (command == null) {
+                String languageCode = callbackquery.getFrom().getLanguageCode();
+                Locale locale = Locale.forLanguageTag(languageCode);
+                String noActiveCommands = Context.getResources(locale).getString("bot.notification.noActiveInterfaces");
+                errorQuery(noActiveCommands, callbackquery);
+                return;
             }
-//            else {
-//                String name = update.getCallbackQuery().getFrom().getFirstName();
-//                String message = "Sorry, " + name + ", but looks like your command is expired. " +
-//                        "Try to process it one more time";
-//                sendError(message, update.getCallbackQuery().getMessage().getChatId());
-//            }
+
+            boolean clickOnActiveKeyboard = message.getMessageId().equals(command.getKeyboardMessage().getMessageId());
+            if (!clickOnActiveKeyboard) {
+                String languageCode = callbackquery.getFrom().getLanguageCode();
+                Locale locale = Locale.forLanguageTag(languageCode);
+                String anotherCommandActive = Context.getResources(locale).getString("bot.notification.anotherInterfaceActive");
+                errorQuery(anotherCommandActive + " " + command.getName(), callbackquery);
+                errorQuery("You have another active keyboard for command " + command.getName(), callbackquery);
+                return;
+            }
+
+            command.processCallbackQuery(update);
         }
     }
 
     public void ignoreQuery(CallbackQuery callbackquery) {
         AnswerCallbackQuery answerCallbackQuery = new AnswerCallbackQuery();
         answerCallbackQuery.setCallbackQueryId(callbackquery.getId());
+        try {
+            execute(answerCallbackQuery);
+        } catch (TelegramApiException e) {
+            log.error("Exception occurred in ignoreQuery method call", e);
+        }
+    }
+
+    public void errorQuery(String error, CallbackQuery callbackquery) {
+        AnswerCallbackQuery answerCallbackQuery = new AnswerCallbackQuery();
+        answerCallbackQuery.setCallbackQueryId(callbackquery.getId());
+        answerCallbackQuery.setText(error);
         try {
             execute(answerCallbackQuery);
         } catch (TelegramApiException e) {

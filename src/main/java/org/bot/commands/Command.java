@@ -10,6 +10,8 @@ public abstract class Command extends Context {
         super(handler, update);
     }
 
+    public abstract String getName();
+
     public boolean isAwaitUserInput() {
         return awaitUserInput;
     }

@@ -20,6 +20,7 @@ public abstract class Context {
 
     private CommandResultHandler handler;
     private ResourceBundle messages;
+
     private Message keyboardMessage;
     private Message lastBotMessage;
 
@@ -32,11 +33,8 @@ public abstract class Context {
         chatId = update.getMessage().getChatId();
         user = update.getMessage().getFrom();
         String languageCode = update.getMessage().getFrom().getLanguageCode();
-        log.info("languageCode: " + languageCode);
         locale = Locale.forLanguageTag(languageCode);
-        ;
-        log.info("locale: " + locale.toString());
-        messages = ResourceBundle.getBundle(RESOURCES, locale, new UTF8Control());
+        messages = getResources(locale);
     }
 
     public User getUser() {
@@ -45,6 +43,10 @@ public abstract class Context {
 
     public String getResource(String id) {
         return messages.getString(id);
+    }
+
+    public static ResourceBundle getResources(Locale locale) {
+        return ResourceBundle.getBundle(RESOURCES, locale, new UTF8Control());
     }
 
     public Locale getLocale() {
@@ -114,4 +116,7 @@ public abstract class Context {
         handler.execute(answer);
     }
 
+    public Message getKeyboardMessage() {
+        return keyboardMessage;
+    }
 }
