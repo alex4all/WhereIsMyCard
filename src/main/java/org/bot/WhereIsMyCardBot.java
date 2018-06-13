@@ -81,13 +81,17 @@ public class WhereIsMyCardBot extends TelegramLongPollingBot {
                 return;
             }
 
-            boolean clickOnActiveKeyboard = message.getMessageId().equals(command.getKeyboardMessage().getMessageId());
+            boolean clickOnActiveKeyboard;
+            if (command.getKeyboardMessage() == null)
+                clickOnActiveKeyboard = false;
+            else
+                clickOnActiveKeyboard = message.getMessageId().equals(command.getKeyboardMessage().getMessageId());
+
             if (!clickOnActiveKeyboard) {
                 String languageCode = callbackquery.getFrom().getLanguageCode();
                 Locale locale = Locale.forLanguageTag(languageCode);
                 String anotherCommandActive = Context.getResources(locale).getString("bot.notification.anotherInterfaceActive");
                 errorQuery(anotherCommandActive + " " + command.getName(), callbackquery);
-                errorQuery("You have another active keyboard for command " + command.getName(), callbackquery);
                 return;
             }
 
