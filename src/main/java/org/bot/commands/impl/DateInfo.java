@@ -7,6 +7,7 @@ import org.bot.commands.Command;
 import org.bot.commands.CommandResultHandler;
 import org.bot.commands.Context;
 import org.bot.keyboards.adapter.CalendarKeyboardAdapter;
+import org.bot.keyboards.adapter.ExcludingCalendarAdapter;
 import org.bot.keyboards.adapter.MonthKeyboardAdapter;
 import org.bot.utils.EditText;
 import org.telegram.telegrambots.api.objects.CallbackQuery;
@@ -83,7 +84,7 @@ public class DateInfo extends Command {
         }
     }
 
-    private class DateInfoCalendarAdapter extends CalendarKeyboardAdapter {
+    private class DateInfoCalendarAdapter extends ExcludingCalendarAdapter {
         public DateInfoCalendarAdapter(Date begin, Date end) {
             super(begin, end);
         }

@@ -42,27 +42,25 @@ public class FirstAppointment extends Command {
         CallbackQuery callbackQuery = update.getCallbackQuery();
         String query = callbackQuery.getData();
         AppointmentDate.Type type = AppointmentDate.Type.valueOf(query);
-        List<AppointmentDate> datesInfo = DATES_MANAGER.getFirstAvailableDates(type, 1);
-        String firstAppointment = datesInfoToString(type, datesInfo);
+        AppointmentDate appointmentDate = DATES_MANAGER.getFirstAvailableDates(type);
+        String firstAppointment = datesInfoToString(type, appointmentDate);
         sendOrEditLast(firstAppointment);
         ignoreCallback(callbackQuery);
     }
 
-    private String datesInfoToString(AppointmentDate.Type type, List<AppointmentDate> datesInfo) {
+    private String datesInfoToString(AppointmentDate.Type type, AppointmentDate appointmentDate) {
         StringBuilder result = new StringBuilder();
         result.append(EditText.bold(type.name())).append(System.lineSeparator());
-        if (datesInfo.size() == 0) {
+        if (appointmentDate == null) {
             result.append(getResource("command.dateInfo.noData"));
             return result.toString();
         }
 
-        for (AppointmentDate dayInfo : datesInfo) {
-            result.append(EditText.bold(dayInfo.getDate())).append(": ");
-            result.append(dayInfo.getAvailableTime()).append(" ");
-            long minutesAgo = dayInfo.getTimeAfterUpdate();
-            String timeAfterUpdate = EditText.timeAfterUpdate(minutesAgo, this);
-            result.append(EditText.italic(timeAfterUpdate)).append(System.lineSeparator());
-        }
+        result.append(EditText.bold(appointmentDate.getDate())).append(": ");
+        result.append(appointmentDate.getAvailableTime()).append(" ");
+        long minutesAgo = appointmentDate.getTimeAfterUpdate();
+        String timeAfterUpdate = EditText.timeAfterUpdate(minutesAgo, this);
+        result.append(EditText.italic(timeAfterUpdate)).append(System.lineSeparator());
         return result.toString();
     }
 

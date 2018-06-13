@@ -57,12 +57,14 @@ public abstract class Context {
         if (keyboardMessage == null) {
             SendMessage message = new SendMessage()
                     .setChatId(chatId)
+                    .enableMarkdown(true)
                     .setText(text)
                     .setReplyMarkup(keyboard);
             keyboardMessage = handler.execute(message);
         } else {
             EditMessageText message = new EditMessageText()
                     .setChatId(chatId)
+                    .enableMarkdown(true)
                     .setText(text)
                     .setMessageId(keyboardMessage.getMessageId())
                     .setReplyMarkup(keyboard);

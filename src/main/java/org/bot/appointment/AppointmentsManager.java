@@ -29,15 +29,15 @@ public class AppointmentsManager {
     private static final int MAX_AVAILABLE_DATES = 10;
     private static final int EXPIRATION_TIME_SEC = 60 * 60;
 
-    private final Map<AppointmentDate.Type, TreeMap<Long, AppointmentDate>> appointmentCache;
+    private final Map<AppointmentDate.Type, TreeMap<Long, AppointmentDate>> availableAppointmentDates = new HashMap<>();
+    //private final Map<Long, Long> scansHistoryMap = new HashMap<>();
     private final Lock readLock;
     private final Lock writeLock;
     private final JedisCache jedisCache = JedisCache.getInstance();
 
     private AppointmentsManager() {
-        appointmentCache = new HashMap<>();
         for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
-            appointmentCache.put(type, new TreeMap<>());
+            availableAppointmentDates.put(type, new TreeMap<>());
         }
 
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -70,20 +70,23 @@ public class AppointmentsManager {
             }
             List<Object> result = pipe.syncAndReturnAll();
             int loaded = 0;
+            int invalid = 0;
             for (Object object : result) {
                 try {
                     Map<String, String> map = (Map<String, String>) object;
-                    if (map.isEmpty())
+                    if (map.isEmpty()) {
+                        invalid++;
                         continue;
+                    }
                     AppointmentDate date = new AppointmentDate(map);
                     log.debug("Load date: " + date.toString());
                     loaded++;
-                    cacheLocal(date, dateFormat);
+                    updateLocalCache(date, dateFormat);
                 } catch (ClassCastException e) {
                     log.error("Can't cast result from redis to Map<String, String>", e);
                 }
             }
-            log.info("Complete loading appointment dates info. Items loaded: " + loaded);
+            log.info("Complete loading appointment dates info. Items loaded: " + loaded + "; invalid: " + invalid);
         } catch (JedisException e) {
             log.error(e);
         }
@@ -91,6 +94,31 @@ public class AppointmentsManager {
 
     public static AppointmentsManager getInstance() {
         return INSTANCE;
+    }
+
+    public Set<Integer> getAvailableDays(Date month) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(month);
+        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMinimum(Calendar.DAY_OF_MONTH));
+        long firstDate = calendar.getTimeInMillis();
+        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH));
+        long lastDate = calendar.getTimeInMillis();
+        Set<Long> timeSet = new HashSet<>();
+        readLock.lock();
+        try {
+            for (TreeMap<Long, AppointmentDate> datesMap : availableAppointmentDates.values()) {
+                timeSet.addAll(datesMap.navigableKeySet().subSet(firstDate, true, lastDate, true));
+            }
+        } finally {
+            readLock.unlock();
+        }
+
+        Set<Integer> daysSet = new HashSet<>();
+        for (Long time : timeSet) {
+            calendar.setTimeInMillis(time);
+            daysSet.add(calendar.get(Calendar.DAY_OF_MONTH));
+        }
+        return daysSet;
     }
 
     public Map<AppointmentDate.Type, AppointmentDate> getDateInfo(Date date) {
@@ -102,7 +130,7 @@ public class AppointmentsManager {
         readLock.lock();
         try {
             for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
-                dateInfo.put(type, appointmentCache.get(type).get(dateAsMills));
+                dateInfo.put(type, availableAppointmentDates.get(type).get(dateAsMills));
             }
         } finally {
             readLock.unlock();
@@ -110,26 +138,33 @@ public class AppointmentsManager {
         return dateInfo;
     }
 
-    public List<AppointmentDate> getFirstAvailableDates(AppointmentDate.Type type, int count) {
-        List<AppointmentDate> dates = new ArrayList<>();
-        if (count > MAX_AVAILABLE_DATES) {
-            log.warn(count + " is too big. Use default value: " + MAX_AVAILABLE_DATES);
-            count = MAX_AVAILABLE_DATES;
-        }
-        if (count < 1) {
-            log.warn(count + " is not valid. Use min value: 1");
-            count = 1;
-        }
+    public Date getAnyFirstAvailableDate() {
+        long firstDate = Long.MAX_VALUE;
         readLock.lock();
         try {
-            TreeMap<Long, AppointmentDate> datesMap = appointmentCache.get(type);
-            for (Entry<Long, AppointmentDate> entry : datesMap.entrySet()) {
-                if (entry.getValue().isAvailable())
-                    dates.add(entry.getValue());
-                if (dates.size() >= count)
-                    return dates;
+            for (TreeMap<Long, AppointmentDate> datesMap : availableAppointmentDates.values()) {
+                for (Entry<Long, AppointmentDate> entry : datesMap.entrySet()) {
+                    if (entry.getValue().isAvailable()) {
+                        long appointmentDate = entry.getKey();
+                        firstDate = firstDate < appointmentDate ? firstDate : appointmentDate;
+                        break;
+                    }
+                }
             }
-            return dates;
+        } finally {
+            readLock.unlock();
+        }
+        return new Date(firstDate);
+    }
+
+
+    public AppointmentDate getFirstAvailableDates(AppointmentDate.Type type) {
+        readLock.lock();
+        try {
+            TreeMap<Long, AppointmentDate> datesMap = availableAppointmentDates.get(type);
+            if (datesMap.isEmpty())
+                return null;
+            return datesMap.get(datesMap.firstKey());
         } finally {
             readLock.unlock();
         }
@@ -140,17 +175,29 @@ public class AppointmentsManager {
      *
      * @param updatedDateInfo updated information about date
      */
-    private void cacheLocal(AppointmentDate updatedDateInfo, DateFormat dateFormat) {
+    private void updateLocalCache(AppointmentDate updatedDateInfo, DateFormat dateFormat) {
         Long dateKey = null;
         try {
             dateKey = Utils.dateToMills(updatedDateInfo.getDate(), dateFormat);
         } catch (ParseException e) {
             log.error("AppointmentDate is not cached. Can't parse date: " + updatedDateInfo.getDate(), e);
+            throw new RuntimeException(e);
         }
+        // remove appointment from available list if it is not available
+        if (!updatedDateInfo.isAvailable()) {
+            writeLock.lock();
+            try {
+                availableAppointmentDates.get(updatedDateInfo.getType()).remove(dateKey);
+            } finally {
+                writeLock.unlock();
+            }
+        }
+
+        // update appointment if it is in the list
         AppointmentDate.Type type = updatedDateInfo.getType();
         readLock.lock();
         try {
-            AppointmentDate oldDate = appointmentCache.get(type).get(dateKey);
+            AppointmentDate oldDate = availableAppointmentDates.get(type).get(dateKey);
             if (oldDate != null) {
                 oldDate.update(updatedDateInfo);
                 return;
@@ -158,9 +205,11 @@ public class AppointmentsManager {
         } finally {
             readLock.unlock();
         }
+
+        // add appointment
         writeLock.lock();
         try {
-            appointmentCache.get(type).put(dateKey, updatedDateInfo);
+            availableAppointmentDates.get(type).put(dateKey, updatedDateInfo);
         } finally {
             writeLock.unlock();
         }
@@ -195,7 +244,7 @@ public class AppointmentsManager {
             boolean doScan = false;
             log.info("UpdateTask checks data cached locally");
             for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
-                TreeMap<Long, AppointmentDate> map = appointmentCache.get(type);
+                TreeMap<Long, AppointmentDate> map = availableAppointmentDates.get(type);
                 if (map.size() < daysToScan) {
                     log.info(type.name() + " appointment info is not full: " + map.size());
                     doScan = true;
@@ -227,7 +276,7 @@ public class AppointmentsManager {
                         AppointmentDate appointmentDate = ServerAPI.getDateInfo(date, type);
                         appointmentDate.setUpdatedAt(updatedAt);
                         log.info("Updated: " + appointmentDate.toString());
-                        cacheLocal(appointmentDate, dateFormat);
+                        updateLocalCache(appointmentDate, dateFormat);
                         cacheRemote(appointmentDate);
                     } catch (IOException e) {
                         log.error("Exception occurred while sending request to urzad", e);
@@ -251,13 +300,13 @@ public class AppointmentsManager {
             long currentTime = System.currentTimeMillis();
             String currentDate = Utils.millsToDate(currentTime, dateFormat);
 
-            for (AppointmentDate.Type type : appointmentCache.keySet()) {
-                Long firstKeyTime = appointmentCache.get(type).firstKey();
+            for (AppointmentDate.Type type : availableAppointmentDates.keySet()) {
+                Long firstKeyTime = availableAppointmentDates.get(type).firstKey();
                 String firstKeyDate = Utils.millsToDate(firstKeyTime, dateFormat);
                 if (!currentDate.equals(firstKeyDate) && firstKeyTime < currentTime) {
                     writeLock.lock();
                     try {
-                        appointmentCache.get(type).remove(firstKeyTime);
+                        availableAppointmentDates.get(type).remove(firstKeyTime);
                     } finally {
                         writeLock.unlock();
                     }
