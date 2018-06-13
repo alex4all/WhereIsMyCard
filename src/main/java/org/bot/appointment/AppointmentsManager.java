@@ -118,6 +118,7 @@ public class AppointmentsManager {
             calendar.setTimeInMillis(time);
             daysSet.add(calendar.get(Calendar.DAY_OF_MONTH));
         }
+        log.info("Available days: " + daysSet.toString());
         return daysSet;
     }
 
@@ -176,7 +177,7 @@ public class AppointmentsManager {
      * @param updatedDateInfo updated information about date
      */
     private void updateLocalCache(AppointmentDate updatedDateInfo, DateFormat dateFormat) {
-        Long dateKey = null;
+        Long dateKey;
         try {
             dateKey = Utils.dateToMills(updatedDateInfo.getDate(), dateFormat);
         } catch (ParseException e) {
@@ -188,6 +189,7 @@ public class AppointmentsManager {
             writeLock.lock();
             try {
                 availableAppointmentDates.get(updatedDateInfo.getType()).remove(dateKey);
+                return;
             } finally {
                 writeLock.unlock();
             }
@@ -266,6 +268,7 @@ public class AppointmentsManager {
 
         private void updateAppointmentDates() {
             Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DAY_OF_YEAR, 120);
             long startScan = System.currentTimeMillis();
             log.info("Start scan");
             for (int i = 0; i < daysToScan; i++) {

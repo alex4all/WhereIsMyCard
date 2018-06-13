@@ -27,12 +27,9 @@ public class AppointmentDate {
         if (availableTime.startsWith(NEGATIVE_RESULT)) {
             available = false;
         } else {
-            log.info("Available time: " + availableTime);
-
             availableTime = availableTime.replaceAll("  ", " ");
             String[] availableTimeArray = availableTime.split(" ");
             this.availableTime = Arrays.asList(availableTimeArray);
-            log.info("availableTime: " + this.availableTime.toString());
         }
     }
 
