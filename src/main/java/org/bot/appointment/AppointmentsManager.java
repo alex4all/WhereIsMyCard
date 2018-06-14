@@ -268,7 +268,6 @@ public class AppointmentsManager {
 
         private void updateAppointmentDates() {
             Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.DAY_OF_YEAR, 120);
             long startScan = System.currentTimeMillis();
             log.info("Start scan");
             for (int i = 0; i < daysToScan; i++) {
