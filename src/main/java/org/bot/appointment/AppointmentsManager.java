@@ -247,17 +247,10 @@ public class AppointmentsManager {
             log.info("UpdateTask checks data cached locally");
             for (AppointmentDate.Type type : AppointmentDate.Type.values()) {
                 TreeMap<Long, AppointmentDate> map = availableAppointmentDates.get(type);
-                if (map.size() < daysToScan) {
-                    log.info(type.name() + " appointment info is not full: " + map.size());
-                    doScan = true;
-                    continue;
-                }
-
-                Entry<Long, AppointmentDate> entry = map.firstEntry();
-                long updatedAt = entry.getValue().getUpdatedAt();
-                long dataKeepTime = System.currentTimeMillis() - updatedAt;
-                long dataKeepTimeMin = dataKeepTime / (1000 * 60);
-                log.info("Data updated " + dataKeepTimeMin + " min ago");
+                long firstUpdatedAt = map.firstEntry().getValue().getUpdatedAt();
+                long lastUpdatedAt = map.lastEntry().getValue().getUpdatedAt();
+                long oldest = firstUpdatedAt < lastUpdatedAt ? firstUpdatedAt : lastUpdatedAt;
+                long dataKeepTime = System.currentTimeMillis() - oldest;
                 if (dataKeepTime > UPDATE_PERIOD)
                     doScan = true;
             }
