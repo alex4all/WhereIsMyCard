@@ -33,7 +33,11 @@ public abstract class Context {
         chatId = update.getMessage().getChatId();
         user = update.getMessage().getFrom();
         String languageCode = update.getMessage().getFrom().getLanguageCode();
-        locale = Locale.forLanguageTag(languageCode);
+        // for some users languageCode can be null
+        if (languageCode == null || languageCode.isEmpty())
+            locale = Locale.getDefault();
+        else
+            locale = Locale.forLanguageTag(languageCode);
         messages = getResources(locale);
     }
 
