@@ -15,8 +15,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
-    private static final Logger log = LogManager.getLogger(CalendarKeyboardAdapter.class);
+public abstract class CalendarAdapter2 implements KeyboardAdapter {
+    private static final Logger log = LogManager.getLogger(CalendarAdapter2.class);
     private static final String DEF_HEADER_PATTERN = "LLLL YYYY";
     private static final String DEF_DAY_OF_WEEK_PATTERN = "EE";
     private static final String DEF_CALLBACK_DATE_PATTERN = "yyyy-MM-dd";
@@ -25,23 +25,19 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
 
     protected SimpleDateFormat callbackFormat = new SimpleDateFormat(DEF_CALLBACK_DATE_PATTERN);
 
-    private Date monthToDisplay;
     private Date begin;
     private Date end;
-    private String[] daysOfWeek;
-    private GridKeyboard keyboard;
 
-    public CalendarKeyboardAdapter(Date begin, Date end) {
+    public CalendarAdapter2(Date begin, Date end) {
         this.begin = begin;
         this.end = end;
-        keyboard = new GridKeyboard();
     }
 
-    public CalendarKeyboardAdapter() {
+    public CalendarAdapter2() {
         Calendar calendar = Calendar.getInstance();
-        Date begin = calendar.getTime();
+        begin = calendar.getTime();
         calendar.add(Calendar.DAY_OF_YEAR, AppointmentsManager.DAYS_TO_SCAN);
-        Date end = calendar.getTime();
+        end = calendar.getTime();
     }
 
     public static boolean isCallbackHandler(String queryText) {
@@ -112,20 +108,19 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
 
     public abstract void onBackClick(Context context, CallbackQuery query);
 
-    public void display(Date date, Context context) {
-        monthToDisplay = date;
-        keyboard.clear();
-        keyboard.addRow(createHeader(context.getLocale()));
+    public void display(Date monthToDisplay, Context context) {
+        GridKeyboard keyboard = new GridKeyboard();
+        keyboard.addRow(createHeader(monthToDisplay, context.getLocale()));
         keyboard.addRow(createDaysOfWeekNames(context.getLocale()));
         keyboard.addGrid(createWeedDaysGrid());
         keyboard.addRow(createBottomPanel(context));
         context.showKeyboard(context.getResource("keyboard.calendar.selectDay"), keyboard.build());
     }
 
-    private List<Button> createHeader(Locale locale) {
+    private List<Button> createHeader(Date date, Locale locale) {
         List<Button> header = new ArrayList<>(1);
         SimpleDateFormat headerFormat = new SimpleDateFormat(DEF_HEADER_PATTERN, locale);
-        String monthHeader = headerFormat.format(monthToDisplay);
+        String monthHeader = headerFormat.format(date);
         header.add(new Button(monthHeader, Command.IGNORE_QUERY));
         return header;
     }
@@ -139,7 +134,7 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
         return daysOfWeekNames;
     }
 
-    private List<List<Button>> createWeedDaysGrid() {
+    private List<List<Button>> createWeedDaysGrid(Date monthToDisplay) {
         List<List<Button>> weedDaysGreed = new LinkedList<>();
         // set calendar first day of month
         Calendar calendar = Calendar.getInstance();
@@ -235,8 +230,6 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
      * Get add days of week in array
      */
     private String[] getDaysOfWeek(Locale locale) {
-        if (this.daysOfWeek != null)
-            return this.daysOfWeek;
         String[] daysOfWeek = new String[7];
         SimpleDateFormat dateFormat = new SimpleDateFormat(DEF_DAY_OF_WEEK_PATTERN, locale);
         Calendar calendar = Calendar.getInstance();
@@ -246,7 +239,6 @@ public abstract class CalendarKeyboardAdapter implements KeyboardAdapter {
             calendar.add(Calendar.DAY_OF_WEEK, 1);
             daysOfWeek[i] = dateFormat.format(calendar.getTime());
         }
-        this.daysOfWeek = daysOfWeek;
         return daysOfWeek;
     }
 }

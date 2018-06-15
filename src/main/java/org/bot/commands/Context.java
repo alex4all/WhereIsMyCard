@@ -30,9 +30,14 @@ public abstract class Context {
 
     public Context(CommandResultHandler handler, Update update) {
         this.handler = handler;
-        chatId = update.getMessage().getChatId();
-        user = update.getMessage().getFrom();
-        String languageCode = update.getMessage().getFrom().getLanguageCode();
+        Message message;
+        if (update.hasMessage())
+            message = update.getMessage();
+        else
+            message = update.getCallbackQuery().getMessage();
+        chatId = message.getChatId();
+        user = message.getFrom();
+        String languageCode = user.getLanguageCode();
         // for some users languageCode can be null
         if (languageCode == null || languageCode.isEmpty())
             locale = Locale.getDefault();
@@ -74,6 +79,16 @@ public abstract class Context {
                     .setReplyMarkup(keyboard);
             handler.execute(message);
         }
+    }
+
+    public void editKeyboard(String text, InlineKeyboardMarkup keyboard, Integer messageId) {
+        EditMessageText message = new EditMessageText()
+                .setChatId(chatId)
+                .enableMarkdown(true)
+                .setText(text)
+                .setMessageId(messageId)
+                .setReplyMarkup(keyboard);
+        handler.execute(message);
     }
 
     public void sendOrEditLast(String text) {

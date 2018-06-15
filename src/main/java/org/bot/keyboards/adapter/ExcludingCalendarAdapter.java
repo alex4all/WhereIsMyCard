@@ -16,6 +16,10 @@ public abstract class ExcludingCalendarAdapter extends CalendarKeyboardAdapter {
         super(begin, end);
     }
 
+    public ExcludingCalendarAdapter() {
+        super();
+    }
+
     /**
      * Allows to override default behavior and implement different data display strategies
      *
