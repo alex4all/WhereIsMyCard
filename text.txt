@@ -1,0 +1,85 @@
+Java, Python, RDBMS, KAFKA, Snowflake, Teradata & Databricks
+
+
+
+When you select a platform:
+What kind of data you would like to process. Ensure that data is supported by platrofm
+
+
+SDLC: https://www.wrike.com/agile-guide/agile-development-life-cycle/
+Concept
+Inception
+Iteration
+Release
+Maintenance
+Retirement
+
+
+What is a Star Schema?
+A star schema is a data modeling technique used in data warehousing to organize data into a simple, efficient structure optimized for querying and reporting. It is one of the most common schema designs in dimensional modeling, introduced by Ralph Kimball. The star schema gets its name from its shape: a central fact table surrounded by multiple dimension tables, resembling a star when visualized.
+
+
+Summary
+OLTP is a data processing paradigm focused on managing real-time, transactional workloads with high concurrency, integrity, and speed. It powers operational systems like banking, e-commerce, and reservations, using normalized databases and ACID compliance. While excellent for transactions, it’s not designed for analytics—that’s where OLAP and data warehousing (e.g., star schemas) come in. If you’d like a deeper dive into OLTP design or a comparison with another concept, let me know!
+
+
+
+When you increase a load parameter and keep the system resources (CPU, memory,
+network bandwidth, etc.) unchanged, how is the performance of your system
+affected?
+• When you increase a load parameter, how much do you need to increase the
+resources if you want to keep performance unchanged?
+
+An application has to meet various requirements in order to be useful. There are
+functional requirements (what it should do, such as allowing data to be stored,
+retrieved, searched, and processed in various ways), and some nonfunctional requirements
+(general properties like security, reliability, compliance, scalability, compatibility,
+and maintainability). In this chapter we discussed reliability, scalability, and
+maintainability in detail.
+Reliability means making systems work correctly, even when faults occur. Faults can
+be in hardware (typically random and uncorrelated), software (bugs are typically systematic
+and hard to deal with), and humans (who inevitably make mistakes from
+time to time). Fault-tolerance techniques can hide certain types of faults from the end
+user.
+Scalability means having strategies for keeping performance good, even when load
+increases. In order to discuss scalability, we first need ways of describing load and
+performance quantitatively. We briefly looked at Twitter’s home timelines as an
+example of describing load, and response time percentiles as a way of measuring performance. 
+In a scalable system, you can add processing capacity in order to remain
+reliable under high load.
+Maintainability has many facets, but in essence it’s about making life better for the
+engineering and operations teams who need to work with the system. Good abstractions
+can help reduce complexity and make the system easier to modify and adapt for
+new use cases. Good operability means having good visibility into the system’s health,
+and having effective ways of managing it.
+There is unfortunately no easy fix for making applications reliable, scalable, or maintainable.
+However, there are certain patterns and techniques that keep reappearing in
+different kinds of applications. In the next few chapters we will take a look at some
+examples of data systems and analyze how they work toward those goals.
+
+
+
+OLTP online transaction processing. OLTP systems are usually expected to be highly available and to process transactions with low latency, since they are often critical to the operation of the business.
+OLAP online analytic processing = Data Warehousing
+
+
+This process of getting data into the warehouse is known as Extract–Transform–Load (ETL)
+
+On a high level, we saw that storage engines fall into two broad categories: those optimized
+for transaction processing (OLTP), and those optimized for analytics (OLAP).
+There are big differences between the access patterns in those use cases:
+• OLTP systems are typically user-facing, which means that they may see a huge
+volume of requests. In order to handle the load, applications usually only touch a
+small number of records in each query. The application requests records using
+some kind of key, and the storage engine uses an index to find the data for the
+requested key. Disk seek time is often the bottleneck here.
+• Data warehouses and similar analytic systems are less well known, because they
+are primarily used by business analysts, not by end users. They handle a much
+lower volume of queries than OLTP systems, but each query is typically very
+demanding, requiring many millions of records to be scanned in a short time.
+Disk bandwidth (not seek time) is often the bottleneck here, and columnoriented
+storage is an increasingly popular solution for this kind of workload
+
+
+
+
