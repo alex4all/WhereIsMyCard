@@ -1,0 +1,87 @@
+# Script to install Tomcat, deploy IdentityIQ Cloud Gateway, and set up as a Windows service
+# Run this script with administrative privileges
+
+# Variables
+$tomcatVersion = "9.0.91"  # Adjust to the desired Tomcat version
+$tomcatUrl = "https://dlcdn.apache.org/tomcat/tomcat-9/v${tomcatVersion}/bin/apache-tomcat-${tomcatVersion}.zip"
+$tomcatDir = "C:\Tomcat"
+$tomcatZip = "C:\Temp\apache-tomcat-${tomcatVersion}.zip"
+$cloudGatewayUrl = "https://example.com/identityiq-cloud-gateway.zip"  # Replace with actual URL or local path
+$cloudGatewayZip = "C:\Temp\identityiq-cloud-gateway.zip"
+$javaHome = "C:\Program Files\Java\jdk-11"  # Adjust to your JDK path
+$serviceName = "Tomcat9IdentityIQ"
+
+# Create temporary directory for downloads
+if (-not (Test-Path "C:\Temp")) {
+    New-Item -ItemType Directory -Path "C:\Temp" | Out-Null
+}
+
+# Step 1: Download Apache Tomcat
+Write-Host "Downloading Apache Tomcat ${tomcatVersion}..."
+Invoke-WebRequest -Uri $tomcatUrl -OutFile $tomcatZip
+
+# Step 2: Extract Tomcat
+Write-Host "Extracting Tomcat to ${tomcatDir}..."
+if (Test-Path $tomcatDir) {
+    Remove-Item -Path $tomcatDir -Recurse -Force
+}
+Expand-Archive -Path $tomcatZip -DestinationPath $tomcatDir
+$tomcatHome = "${tomcatDir}\apache-tomcat-${tomcatVersion}"
+
+# Step 3: Set JAVA_HOME environment variable (if not already set)
+if (-not $env:JAVA_HOME) {
+    Write-Host "Setting JAVA_HOME to ${javaHome}..."
+    [System.Environment]::SetEnvironmentVariable("JAVA_HOME", $javaHome, [System.EnvironmentVariableTarget]::Machine)
+    $env:JAVA_HOME = $javaHome
+}
+
+# Step 4: Download IdentityIQ Cloud Gateway
+Write-Host "Downloading IdentityIQ Cloud Gateway..."
+Invoke-WebRequest -Uri $cloudGatewayUrl -OutFile $cloudGatewayZip
+
+# Step 5: Deploy Cloud Gateway to Tomcat
+Write-Host "Deploying IdentityIQ Cloud Gateway to Tomcat..."
+$webappsDir = "${tomcatHome}\webapps"
+Expand-Archive -Path $cloudGatewayZip -DestinationPath $webappsDir -Force
+
+# Step 6: Configure Tomcat as a Windows Service
+Write-Host "Configuring Tomcat as a Windows Service..."
+$tomcatBin = "${tomcatHome}\bin"
+Set-Location -Path $tomcatBin
+
+# Install the service
+& .\service.bat install $serviceName
+
+# Update service parameters
+& .\tomcat9.exe "//US//${serviceName}" `
+    --Description="Apache Tomcat 9 with IdentityIQ Cloud Gateway" `
+    --Startup=auto `
+    --Jvm="${javaHome}\bin\server\jvm.dll" `
+    --Classpath="${tomcatHome}\bin\bootstrap.jar;${tomcatHome}\bin\tomcat-juli.jar" `
+    --StartMode=jvm `
+    --StopMode=jvm `
+    --StartClass="org.apache.catalina.startup.Bootstrap" `
+    --StartParams=start `
+    --StopClass="org.apache.catalina.startup.Bootstrap" `
+    --StopParams=stop `
+    ++JvmOptions="-Dcatalina.home=${tomcatHome};-Dcatalina.base=${tomcatHome}"
+
+# Step 7: Start the service
+Write-Host "Starting the ${serviceName} service..."
+Start-Service -Name $serviceName
+
+# Verify service status
+$serviceStatus = Get-Service -Name $serviceName
+if ($serviceStatus.Status -eq "Running") {
+    Write-Host "Tomcat service '${serviceName}' is running successfully."
+    Write-Host "Access the Cloud Gateway at: http://localhost:8080/identityiq-cloud-gateway (adjust port if customized)"
+} else {
+    Write-Host "Failed to start the service. Check the logs in ${tomcatHome}\logs for details."
+}
+
+# Clean up temporary files
+Write-Host "Cleaning up temporary files..."
+Remove-Item -Path $tomcatZip -Force
+Remove-Item -Path $cloudGatewayZip -Force
+
+Write-Host "Installation and deployment complete!"
