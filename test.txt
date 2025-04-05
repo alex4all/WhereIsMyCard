@@ -1,14 +1,22 @@
 # Variables
+
+# Get-ExecutionPolicy
+# Restricted
+# Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
+# Start-Service -Name "apache-tomcat-9.0.102-cloud-gateway"
+
 $zipFilesLocation = $PSScriptRoot # path to current directory
 $tomcatVersion = "9.0.102"
 $cloudGatewayZip = "identityiq-CloudGateway-8.4.zip"
 $cloudGatewayPatchZip = "IdentityIQCloudGateway-8.4p2.zip"
 $tomcatZip = "apache-tomcat-${tomcatVersion}-windows-x64.zip"
-$tomcatServiceName = "apache-tomcat-${tomcatVersion}-cloud-gateway"
+$tomcatServiceName = "apache-tomcat-${tomcatVersion}-cloud-gateway"  # Simple service name
 $tomcatServiceDisplayName = "Apache Tomcat ${tomcatVersion} with Cloud Gateway"  # Display name in Services
 
 $javaHome = "C:\Program Files\Java\jdk-17"
-$tomcatHome = "C:\temp\apache-tomcat-$tomcatVersion"
+$tomcatParentPath = "C:\temp"  # Parent directory where Tomcat will be installed
+$tomcatHome = Join-Path $tomcatParentPath "apache-tomcat-$tomcatVersion"
+$tempExtractPath = Join-Path $tomcatParentPath "temp_extract"
 
 # List of configuration files to replace (only those with customizations)
 $configFilesToReplace = @(
@@ -34,18 +42,17 @@ Test-FileExists "$zipFilesLocation\$tomcatZip"
 Test-FileExists "$zipFilesLocation\$cloudGatewayZip"
 Test-FileExists "$zipFilesLocation\$cloudGatewayPatchZip"
 
-# Create temp directory if it doesn't exist
-if (-not (Test-Path "C:\temp")) {
-    New-Item -ItemType Directory -Path "C:\temp" | Out-Null
+# Create parent directory if it doesn't exist
+if (-not (Test-Path $tomcatParentPath)) {
+    New-Item -ItemType Directory -Path $tomcatParentPath -Force | Out-Null
 }
 
-# Unzip Tomcat
-Write-Host "Installing Tomcat..."
-Expand-Archive -Path "$zipFilesLocation\$tomcatZip" -DestinationPath "C:\temp" -Force
+# Extract Tomcat
+Write-Host "Extracting Tomcat..."
+Expand-Archive -Path "$zipFilesLocation\$tomcatZip" -DestinationPath $tomcatParentPath -Force
 
-# Unzip CloudGateway directly to Tomcat webapps
+# Unzip CloudGateway
 Write-Host "Installing CloudGateway..."
-$tempExtractPath = "C:\temp\temp_extract"
 New-Item -ItemType Directory -Path $tempExtractPath -Force | Out-Null
 Expand-Archive -Path "$zipFilesLocation\$cloudGatewayZip" -DestinationPath $tempExtractPath -Force
 $sourceWebapp = "$tempExtractPath\apache-tomcat-9.0.75\webapps\CloudGateway"
@@ -77,17 +84,8 @@ foreach ($configFile in $configFilesToReplace) {
     }
 }
 
-# Ensure SSL configuration is correct in server.xml
-Write-Host "Configuring SSL settings..."
-$serverXmlPath = "$tomcatHome\conf\server.xml"
-$serverXmlContent = Get-Content $serverXmlPath -Raw
-
-# Check if SSL connector is properly configured
-if (-not ($serverXmlContent -match '<Connector.*port="8443".*SSLEnabled="true"')) {
-    Write-Host "Warning: SSL connector not properly configured in server.xml"
-    Write-Host "Please ensure SSL is configured on port 8443 for Cloud Gateway communication"
-}
-
+# Clean up temporary files
+Write-Host "Cleaning up temporary files..."
 Remove-Item -Path $tempExtractPath -Recurse -Force
 
 # Apply CloudGateway patch
