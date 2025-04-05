@@ -1,87 +1,141 @@
-# Script to install Tomcat, deploy IdentityIQ Cloud Gateway, and set up as a Windows service
-# Run this script with administrative privileges
-
 # Variables
-$tomcatVersion = "9.0.91"  # Adjust to the desired Tomcat version
-$tomcatUrl = "https://dlcdn.apache.org/tomcat/tomcat-9/v${tomcatVersion}/bin/apache-tomcat-${tomcatVersion}.zip"
-$tomcatDir = "C:\Tomcat"
-$tomcatZip = "C:\Temp\apache-tomcat-${tomcatVersion}.zip"
-$cloudGatewayUrl = "https://example.com/identityiq-cloud-gateway.zip"  # Replace with actual URL or local path
-$cloudGatewayZip = "C:\Temp\identityiq-cloud-gateway.zip"
-$javaHome = "C:\Program Files\Java\jdk-11"  # Adjust to your JDK path
-$serviceName = "Tomcat9IdentityIQ"
+$zipFilesLocation = $PSScriptRoot # path to current directory
+$tomcatVersion = "9.0.102"
+$cloudGatewayZip = "identityiq-CloudGateway-8.4.zip"
+$cloudGatewayPatchZip = "IdentityIQCloudGateway-8.4p2.zip"
+$tomcatZip = "apache-tomcat-${tomcatVersion}-windows-x64.zip"
+$tomcatServiceName = "apache-tomcat-${tomcatVersion}-cloud-gateway"
+$tomcatServiceDisplayName = "Apache Tomcat ${tomcatVersion} with Cloud Gateway"  # Display name in Services
 
-# Create temporary directory for downloads
-if (-not (Test-Path "C:\Temp")) {
-    New-Item -ItemType Directory -Path "C:\Temp" | Out-Null
+$javaHome = "C:\Program Files\Java\jdk-17"
+$tomcatHome = "C:\temp\apache-tomcat-$tomcatVersion"
+
+# List of configuration files to replace (only those with customizations)
+$configFilesToReplace = @(
+    "conf\server.xml",      # Has custom SSL and port configurations
+    "conf\web.xml",         # Has custom servlet and filter configurations
+    "conf\catalina.properties",  # Has custom properties
+    "conf\logging.properties"    # Has custom logging settings
+)
+
+# Function to check if a file exists
+function Test-FileExists {
+    param (
+        [string]$filePath
+    )
+    if (-not (Test-Path $filePath)) {
+        Write-Host "Error: File not found - $filePath"
+        exit 1
+    }
 }
 
-# Step 1: Download Apache Tomcat
-Write-Host "Downloading Apache Tomcat ${tomcatVersion}..."
-Invoke-WebRequest -Uri $tomcatUrl -OutFile $tomcatZip
+# Check if required files exist
+Test-FileExists "$zipFilesLocation\$tomcatZip"
+Test-FileExists "$zipFilesLocation\$cloudGatewayZip"
+Test-FileExists "$zipFilesLocation\$cloudGatewayPatchZip"
 
-# Step 2: Extract Tomcat
-Write-Host "Extracting Tomcat to ${tomcatDir}..."
-if (Test-Path $tomcatDir) {
-    Remove-Item -Path $tomcatDir -Recurse -Force
-}
-Expand-Archive -Path $tomcatZip -DestinationPath $tomcatDir
-$tomcatHome = "${tomcatDir}\apache-tomcat-${tomcatVersion}"
-
-# Step 3: Set JAVA_HOME environment variable (if not already set)
-if (-not $env:JAVA_HOME) {
-    Write-Host "Setting JAVA_HOME to ${javaHome}..."
-    [System.Environment]::SetEnvironmentVariable("JAVA_HOME", $javaHome, [System.EnvironmentVariableTarget]::Machine)
-    $env:JAVA_HOME = $javaHome
+# Create temp directory if it doesn't exist
+if (-not (Test-Path "C:\temp")) {
+    New-Item -ItemType Directory -Path "C:\temp" | Out-Null
 }
 
-# Step 4: Download IdentityIQ Cloud Gateway
-Write-Host "Downloading IdentityIQ Cloud Gateway..."
-Invoke-WebRequest -Uri $cloudGatewayUrl -OutFile $cloudGatewayZip
+# Unzip Tomcat
+Write-Host "Installing Tomcat..."
+Expand-Archive -Path "$zipFilesLocation\$tomcatZip" -DestinationPath "C:\temp" -Force
 
-# Step 5: Deploy Cloud Gateway to Tomcat
-Write-Host "Deploying IdentityIQ Cloud Gateway to Tomcat..."
-$webappsDir = "${tomcatHome}\webapps"
-Expand-Archive -Path $cloudGatewayZip -DestinationPath $webappsDir -Force
+# Unzip CloudGateway directly to Tomcat webapps
+Write-Host "Installing CloudGateway..."
+$tempExtractPath = "C:\temp\temp_extract"
+New-Item -ItemType Directory -Path $tempExtractPath -Force | Out-Null
+Expand-Archive -Path "$zipFilesLocation\$cloudGatewayZip" -DestinationPath $tempExtractPath -Force
+$sourceWebapp = "$tempExtractPath\apache-tomcat-9.0.75\webapps\CloudGateway"
+$destWebapp = "$tomcatHome\webapps\CloudGateway"
+Copy-Item -Path $sourceWebapp -Destination $destWebapp -Recurse -Force
 
-# Step 6: Configure Tomcat as a Windows Service
-Write-Host "Configuring Tomcat as a Windows Service..."
-$tomcatBin = "${tomcatHome}\bin"
-Set-Location -Path $tomcatBin
+# Copy keystore from CloudGateway package
+Write-Host "Copying keystore from CloudGateway package..."
+$sourceKeystore = "$tempExtractPath\apache-tomcat-9.0.75\keystore"
+$destKeystore = "$tomcatHome\keystore"
+if (Test-Path $sourceKeystore) {
+    Copy-Item -Path $sourceKeystore -Destination $destKeystore -Recurse -Force
+    Write-Host "Keystore copied successfully"
+} else {
+    Write-Host "Error: Keystore directory not found in CloudGateway package"
+    exit 1
+}
+
+# Replace configuration files
+Write-Host "Replacing Tomcat configuration files..."
+foreach ($configFile in $configFilesToReplace) {
+    $sourceConfig = "$tempExtractPath\apache-tomcat-9.0.75\$configFile"
+    $destConfig = "$tomcatHome\$configFile"
+    if (Test-Path $sourceConfig) {
+        Write-Host "Replacing $configFile..."
+        Copy-Item -Path $sourceConfig -Destination $destConfig -Force
+    } else {
+        Write-Host "Warning: Configuration file $configFile not found in CloudGateway package"
+    }
+}
+
+# Ensure SSL configuration is correct in server.xml
+Write-Host "Configuring SSL settings..."
+$serverXmlPath = "$tomcatHome\conf\server.xml"
+$serverXmlContent = Get-Content $serverXmlPath -Raw
+
+# Check if SSL connector is properly configured
+if (-not ($serverXmlContent -match '<Connector.*port="8443".*SSLEnabled="true"')) {
+    Write-Host "Warning: SSL connector not properly configured in server.xml"
+    Write-Host "Please ensure SSL is configured on port 8443 for Cloud Gateway communication"
+}
+
+Remove-Item -Path $tempExtractPath -Recurse -Force
+
+# Apply CloudGateway patch
+Write-Host "Applying CloudGateway patch..."
+Expand-Archive -Path "$zipFilesLocation\$cloudGatewayPatchZip" -DestinationPath $destWebapp -Force
+
+# Configure Tomcat service
+Write-Host "Creating Tomcat service..."
+
+# Set environment variables
+$env:JAVA_HOME = $javaHome
+$env:CATALINA_HOME = $tomcatHome
+$env:CATALINA_BASE = $tomcatHome
 
 # Install the service
-& .\service.bat install $serviceName
+Write-Host "Installing Tomcat service..."
+Push-Location "$tomcatHome\bin"
 
-# Update service parameters
-& .\tomcat9.exe "//US//${serviceName}" `
-    --Description="Apache Tomcat 9 with IdentityIQ Cloud Gateway" `
-    --Startup=auto `
-    --Jvm="${javaHome}\bin\server\jvm.dll" `
-    --Classpath="${tomcatHome}\bin\bootstrap.jar;${tomcatHome}\bin\tomcat-juli.jar" `
-    --StartMode=jvm `
-    --StopMode=jvm `
-    --StartClass="org.apache.catalina.startup.Bootstrap" `
-    --StartParams=start `
-    --StopClass="org.apache.catalina.startup.Bootstrap" `
-    --StopParams=stop `
-    ++JvmOptions="-Dcatalina.home=${tomcatHome};-Dcatalina.base=${tomcatHome}"
+# First remove any existing service with the same name
+& .\service.bat remove $tomcatServiceName
 
-# Step 7: Start the service
-Write-Host "Starting the ${serviceName} service..."
-Start-Service -Name $serviceName
+# Install the service with our custom name
+& .\service.bat install $tomcatServiceName
+
+# Configure service properties
+Write-Host "Configuring service properties..."
+& .\tomcat9.exe "//US//${tomcatServiceName}" `
+    --DisplayName="$tomcatServiceDisplayName" `
+    --Description="Apache Tomcat ${tomcatVersion} with IdentityIQ Cloud Gateway 8.4p2" `
+    --Startup=auto
+
+Pop-Location
+
+Write-Host "Service installed successfully! Don't forget to start the service." 
+
+# Start the service
+#Write-Host "Starting Tomcat service..."
+#Start-Service -Name $tomcatServiceName
 
 # Verify service status
-$serviceStatus = Get-Service -Name $serviceName
-if ($serviceStatus.Status -eq "Running") {
-    Write-Host "Tomcat service '${serviceName}' is running successfully."
-    Write-Host "Access the Cloud Gateway at: http://localhost:8080/identityiq-cloud-gateway (adjust port if customized)"
-} else {
-    Write-Host "Failed to start the service. Check the logs in ${tomcatHome}\logs for details."
-}
+# $serviceStatus = Get-Service -Name $tomcatServiceName
+# if ($serviceStatus.Status -eq "Running") {
+#     Write-Host "Tomcat service '${tomcatServiceName}' is running successfully."
+#     Write-Host "Access the Cloud Gateway at: https://localhost:8443/CloudGateway"
+#     Write-Host "Note: The default self-signed certificate is being used. For production use,"
+#     Write-Host "      please configure proper SSL certificates as described in the documentation."
+# } else {
+#     Write-Host "Failed to start the service. Check the logs in ${tomcatHome}\logs for details."
+# }
 
-# Clean up temporary files
-Write-Host "Cleaning up temporary files..."
-Remove-Item -Path $tomcatZip -Force
-Remove-Item -Path $cloudGatewayZip -Force
-
-Write-Host "Installation and deployment complete!"
+#Write-Host "Installation completed successfully!" 
